@@ -1,9 +1,55 @@
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { useAuth } from './lib/auth.jsx'
+import LoginPage from './pages/LoginPage.jsx'
+import BoardPage from './pages/BoardPage.jsx'
+
+function FullScreenLoader() {
+  return (
+    <div className="flex min-h-screen items-center justify-center text-slate-500">
+      Loading…
+    </div>
+  )
+}
+
+// Unauthenticated visitors are bounced to /login.
+function RequireAuth({ children }) {
+  const { user, loading } = useAuth()
+  if (loading) return <FullScreenLoader />
+  if (!user) return <Navigate to="/login" replace />
+  return children
+}
+
+// Already signed in? Skip /login and go to the board.
+function RedirectIfAuth({ children }) {
+  const { user, loading } = useAuth()
+  if (loading) return <FullScreenLoader />
+  if (user) return <Navigate to="/board" replace />
+  return children
+}
+
 function App() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-2 px-4 text-center">
-      <h1 className="text-2xl font-semibold text-slate-100">School Tasks</h1>
-      <p className="text-slate-400">coming soon</p>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route
+          path="/login"
+          element={
+            <RedirectIfAuth>
+              <LoginPage />
+            </RedirectIfAuth>
+          }
+        />
+        <Route
+          path="/board"
+          element={
+            <RequireAuth>
+              <BoardPage />
+            </RequireAuth>
+          }
+        />
+        <Route path="*" element={<Navigate to="/board" replace />} />
+      </Routes>
+    </BrowserRouter>
   )
 }
 
