@@ -5,16 +5,17 @@
 **After finishing each step:** test it, update this file (tick the box, set Current/Next, add notes), then `git add -A && git commit` and push. A commit = a working, tested state. Never commit a half-finished step.
 
 ## Status
-- **Current step:** 8 — ICS Edge Function *(not started)*
-- **Next step:** 9 — PWA
-- **Last good commit:** steps 5–7 + rollback hardening — **browser-verified live (12/12 PASS)**, build + lint clean (see step-5/6/7 notes)
+- **Current step:** 9 — PWA *(not started)*
+- **Next step:** 10 — Polish + build
+- **Last good commit:** step 8 — ICS Edge Function **deployed + live-verified** (feed returns valid ICS; build + lint clean)
 - **Build healthy (`npm run build` passes):** ☑
 
 > 📌 **Follow-up for Kevin (not blocking):**
-> 1. **Delete two throwaway test users** (I can't delete users without the
+> 1. **Delete throwaway test users** (I can't delete users without the
 >    service-role key; their cards are already cleaned up):
->    `claude-smoke-1781334775@example.com` (step-4 smoke test) and
->    `claude-step567-1781336942@example.com` (steps 5–7 verification).
+>    `claude-smoke-1781334775@example.com` (step-4 smoke test),
+>    `claude-step567-1781336942@example.com` (steps 5–7 verification), and
+>    `claude-step8-1781338501@example.com` (step-8 ICS verification).
 > 2. **Before production, re-enable "Confirm email"** — I had you turn it off
 >    (`mailer_autoconfirm` is currently true) so I could auto-test the round-trip.
 >    For a real deployment you probably want email confirmation back ON.
@@ -35,7 +36,7 @@
 - [x] **5. Custom due dates + title editing** — cols 1/5 date picker + clear; inline title edit with live label update.
 - [x] **6. Completion + dismissal UI** — checkbox, completed style, col-2 fade-out, "Show completed" toggle.
 - [x] **7. Realtime** — add the `cards` subscription to `useBoard.js` (INSERT/UPDATE/DELETE, filtered to me, re-sort, cleanup).
-- [ ] **8. ICS Edge Function** — `index.ts`, `verify_jwt = false` in `config.toml`, deploy with `--no-verify-jwt`, Calendar header button + popover.
+- [x] **8. ICS Edge Function** — `index.ts`, `verify_jwt = false` in `config.toml`, deploy with `--no-verify-jwt`, Calendar header button + popover. *(Deployed + live-verified — see step-8 notes.)*
 - [ ] **9. PWA** — vite-plugin-pwa, manifest, icons, workbox, install prompt, offline banner.
 - [ ] **10. Polish + build** — optimistic-UI audit (instant update + rollback toast everywhere), toast system, midnight re-sort, overdue badge, keyboard shortcuts; `npm run build` clean; `npm run preview` works; verify no secret key in the bundle.
 - [ ] **11. Hand back to me (manual)** — Vercel import + env vars + deploy; Supabase Auth URL config; custom domain + DNS. **Stop and give me the runbook — don't attempt these yourself.**
@@ -80,3 +81,7 @@
   - *Residual edge (left for step 10's optimistic audit):* completing/editing a card in the ~200ms before its insert resolves still fires one harmless `update` on a temp id (400 in console, no UI effect). Worth guarding temp ids then.
 - **Steps 5–7 browser verification — PASS (Playwright, live project, 12/12, 0 console errors).** Fresh user via REST signup, drove the real login form. Confirmed: login→board, 5 columns in order; add-task auto-label (AP Chem chip, border `rgb(6,182,212)`); **inline title edit recolors live** (AP Chem→Physics, border `rgb(6,182,212)`→`rgb(236,72,153)`); **date picker** sets due_date (badge "20 Jun" + DB `2026-06-20`) and **clear** → "Set date" + DB null; **col-2 completion fades/collapses** (wrapper opacity 0, grid rows 0fr) and **"Show completed" re-reveals** it muted + strikethrough; **non-col-2 keeps completed visible** struck-through; **realtime INSERT + UPDATE** appear live with no local action; realtime DELETE noted above. Test cards cleaned up; test user `claude-step567-1781336942@example.com` (id `6d008fa9-…`) left for Kevin to delete. Playwright temp-installed then removed — `package.json`/lock unchanged, only `src/hooks/useBoard.js` changed.
   - **Verify-harness notes (not app issues):** (1) the board is wider than a 1280px viewport (5×w-72 columns), so a drag onto the off-screen rightmost column silently no-ops in automation — widen the viewport (used 1680px) to drag across the whole board. (2) zsh has a reserved read-only integer `$UID`; don't name a shell var `UID` when scripting REST calls (assigning a uuid string to it throws "bad math expression"). Playwright was installed only for this test and uninstalled after; the working tree is unchanged.
+- **Step 8:** `supabase/functions/ics-feed/index.ts` (Deno, `Deno.serve`) + `[functions.ics-feed] verify_jwt = false` in `config.toml`; deployed with `supabase functions deploy ics-feed --project-ref … --no-verify-jwt`. Calendar button + popover added to `Header.jsx` (ICS URL field, Copy-link with "Copied!" confirmation, Google/Apple subscribe instructions; closes on outside-click/Escape).
+  - **Import gotcha:** the JSR import `jsr:@supabase/supabase-js@2` fails to bundle (`JSR package manifest … 403 Forbidden`). Use `https://esm.sh/@supabase/supabase-js@2` instead — bundles + deploys fine (59 kB).
+  - Function reads `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` from `Deno.env` (auto-injected); queries cards where `due_date` is non-null AND `completed_at IS NULL`; joins `columns` (separate query → Map) for the DESCRIPTION = column name. RFC-5545 text escaping (`\ ; , \n`) + 75-octet line folding. Event = day before `due_date` at `T235900` for both DTSTART/DTEND (UTC calendar math, no tz drift). UID = `<card-uuid>@school-tasks`.
+  - **Live-verified (curl):** no `uid` → 400; public GET with no Authorization header → 200 (confirms `--no-verify-jwt`; without it the feed 401s); `Content-Type: text/calendar; charset=utf-8`; empty user → valid empty VCALENDAR. Seeded a test user with 4 cards: a col-1 dated card with a comma in the title, a col-5 dated card, a completed dated card, and a no-date card → feed contained exactly the 2 active dated VEVENTs with correct day-before dates (`2026-06-20`→`20260619T235900`, `2026-07-01`→`20260630T235900`), comma escaped (`AP Chem test\, unit 3`), DESCRIPTION = "Upcoming Tests"/"Later"; the completed + no-date cards were correctly excluded. Test cards deleted afterward; test user left for Kevin (see Status follow-up).
