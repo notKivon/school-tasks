@@ -5,24 +5,24 @@
 **After finishing each step:** test it, update this file (tick the box, set Current/Next, add notes), then `git add -A && git commit` and push. A commit = a working, tested state. Never commit a half-finished step.
 
 ## Status
-- **Current step:** 3 — Auth *(code complete + build/lint green; BLOCKED on live auth test — see below)*
-- **Next step:** 4 — Core board
-- **Last good commit:** step 3 — auth (code)
+- **Current step:** 4 — Core board *(not started)*
+- **Next step:** 5 — Custom due dates + title editing
+- **Last good commit:** step 3 — auth (verified live)
 - **Build healthy (`npm run build` passes):** ☑
 
-> ⚠️ **ACTION NEEDED FROM KEVIN (blocks finishing step 3 + the whole app):**
-> The Supabase project has the **Email auth provider DISABLED**. Any sign-in/sign-up
-> returns `422 email_provider_disabled` ("Email logins are disabled"), so I couldn't
-> test the auth round-trip. Enable it: Supabase dashboard → **Authentication →
-> Sign In / Providers → Email → toggle Email ON** (and decide on "Confirm email":
-> currently `mailer_autoconfirm = false`, so new sign-ups require an email click —
-> turn it off if you want instant sign-in while developing). Then tell me and I'll
-> verify sign-up / sign-in / sign-out and tick step 3.
+> 📌 **Two follow-ups for Kevin (not blocking step 4):**
+> 1. **Delete two throwaway test users** I created while verifying auth (Supabase →
+>    Authentication → Users): `claude-smoketest-1781333507@example.com` and
+>    `claude-smoketest-1781333556@example.com`. (I can't delete users without the
+>    service-role key, by design.)
+> 2. **Before production, re-enable "Confirm email"** — I had you turn it off
+>    (`mailer_autoconfirm` is currently true) so I could auto-test the round-trip.
+>    For a real deployment you probably want email confirmation back ON.
 
 ## Steps
 - [x] **1. Project setup** — scaffold Vite + React (plain JS) into the current directory; Tailwind v4 via @tailwindcss/vite; install deps (@supabase/supabase-js, @dnd-kit/core + sortable + utilities, react-router-dom); write `.env.local` from the values in CLAUDE.md and confirm it's gitignored; create folders (components, pages, hooks, lib); placeholder page "School Tasks — coming soon"; confirm `npm run dev`. Then `git init`, initial commit, and push to GITHUB_REPO_URL.
 - [x] **2. Lib modules** — `supabase.js`, `dates.js`, `labels.js`, `sorting.js` (see SPEC.md).
-- [~] **3. Auth** — `auth.jsx` (AuthContext/useAuth), `AuthProvider` in `main.jsx`, `LoginPage`, route guards, sticky header. Test sign-up / sign-in / sign-out against the live project. *(Code done, build+lint green. Live auth test BLOCKED: Email provider disabled in Supabase — see Status box. Not ticking until verified end-to-end.)*
+- [x] **3. Auth** — `auth.jsx` (AuthContext/useAuth), `AuthProvider` in `main.jsx`, `LoginPage`, route guards, sticky header. Test sign-up / sign-in / sign-out against the live project. *(Verified live: sign-up 200 + instant session, sign-in 200, sign-out 204, re-sign-in 200.)*
 - [ ] **4. Core board** — `useBoard.js` (no Realtime yet), `BoardPage`, `Column`, `Card`, @dnd-kit between-columns drag, add-task input.
 - [ ] **5. Custom due dates + title editing** — cols 1/5 date picker + clear; inline title edit with live label update.
 - [ ] **6. Completion + dismissal UI** — checkbox, completed style, col-2 fade-out, "Show completed" toggle.
@@ -48,5 +48,5 @@
 - lib modules aren't imported anywhere yet, so they're tree-shaken out of the build — they enter the bundle from step 3+.
 - **Step 3:** auth context (`src/lib/auth.jsx`), `LoginPage` (sign in/up toggle, loading/error/info states), `Header` (email + Sign Out), `BoardPage` placeholder, react-router guards in `App.jsx` (`/login`↔`/board`, `*`→`/board`), `AuthProvider` in `main.jsx`.
 - `auth.jsx` has a file-level `eslint-disable react-refresh/only-export-components` because SPEC mandates AuthProvider + useAuth live in the same file (the rule is a dev-only fast-refresh nicety).
-- Verified live: `GET /auth/v1/settings` → 200 with the publishable key (URL+key wiring good); `disable_signup=false`, `mailer_autoconfirm=false`. But `external.email=false` and a probe sign-in returns `email_provider_disabled` → **Email provider is OFF**. LoginPage surfaces that message cleanly in its error state.
 - New-style publishable key (`sb_publishable_…`) works fine with supabase-js v2 and the GoTrue REST endpoints.
+- **Step 3 live test:** initially the Email provider was OFF (`email_provider_disabled`); Kevin enabled it. Then with `mailer_autoconfirm` turned ON I ran the full GoTrue round-trip (the same endpoints supabase-js hits): signup→200+session, token(password)→200, logout→204, re-signin→200. All green. Two throwaway `@example.com` users remain for Kevin to delete (see Status box).
