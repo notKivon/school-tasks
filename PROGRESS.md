@@ -7,25 +7,25 @@
 ## Status
 - **Current step:** 8 — ICS Edge Function *(not started)*
 - **Next step:** 9 — PWA
-- **Last good commit:** step 7 — Realtime (build + lint clean; **browser verification of 5–7 NOT done** — the live-user test approach was declined this session, so 5–7 are unverified in a real browser; see the follow-up box)
+- **Last good commit:** steps 5–7 + rollback hardening — **browser-verified live (12/12 PASS)**, build + lint clean (see step-5/6/7 notes)
 - **Build healthy (`npm run build` passes):** ☑
 
 > 📌 **Follow-up for Kevin (not blocking):**
-> 1. **Delete one new test user** from the step-4 browser smoke test:
->    `claude-smoke-1781334775@example.com` (I can't delete users without the
->    service-role key). Its cards were already cleaned up.
+> 1. **Delete two throwaway test users** (I can't delete users without the
+>    service-role key; their cards are already cleaned up):
+>    `claude-smoke-1781334775@example.com` (step-4 smoke test) and
+>    `claude-step567-1781336942@example.com` (steps 5–7 verification).
 > 2. **Before production, re-enable "Confirm email"** — I had you turn it off
 >    (`mailer_autoconfirm` is currently true) so I could auto-test the round-trip.
 >    For a real deployment you probably want email confirmation back ON.
-> 3. **Steps 5–7 are build+lint-clean but NOT browser-verified.** I started a
->    live-browser smoke test (sign up a throwaway user → exercise title edit /
->    date picker / completion fade / realtime) but the live signup was declined,
->    so I stopped. Worth a manual pass (or tell me to retry the automated one)
->    on: inline title edit + live label recolor, cols 1/5 date picker + clear,
->    completion checkbox → col-2 fade-out vs other-column "keep visible",
->    "Show completed" toggle, and realtime INSERT/UPDATE/DELETE.
-> 4. **Realtime DELETE filter** may need `cards` to have `REPLICA IDENTITY FULL`
->    for the `user_id=eq` filter to match cron deletes — see step-7 notes.
+> 3. **Realtime DELETE needs a one-time DB setting.** Verified live: the
+>    `user_id=eq` filter doesn't deliver DELETE events because the old record
+>    only carries the PK. Run once in the SQL editor:
+>    `ALTER TABLE public.cards REPLICA IDENTITY FULL;`
+>    Then cron dismissals (and any delete) will disappear from the board live
+>    without a refresh. The frontend handler is already correct — INSERT/UPDATE
+>    were verified to push live; only DELETE delivery is gated on this setting.
+>    (It's a replication setting, not a schema migration.)
 
 ## Steps
 - [x] **1. Project setup** — scaffold Vite + React (plain JS) into the current directory; Tailwind v4 via @tailwindcss/vite; install deps (@supabase/supabase-js, @dnd-kit/core + sortable + utilities, react-router-dom); write `.env.local` from the values in CLAUDE.md and confirm it's gitignored; create folders (components, pages, hooks, lib); placeholder page "School Tasks — coming soon"; confirm `npm run dev`. Then `git init`, initial commit, and push to GITHUB_REPO_URL.
@@ -67,13 +67,16 @@
   - **Title edit:** click the title `<p>` → controlled inline `<input>`; commit on blur, Enter blurs to commit, Escape sets a `cancelledRef` then blurs (so the blur-commit no-ops). Empty/unchanged titles don't write. The class chip + left border update live for free because `detectLabel(card.title)` runs at render and the label is never stored.
   - **Date (cols 1/5 only):** the badge is now a button → opens an inline native `<input type="date">` (autofocus + `showPicker()` in an effect, wrapped in try/catch for browsers without it); commit on change, blur closes. A separate "×" clears to null. `commitDate('')` also maps to null.
   - **dnd-kit vs. inline editors:** every editor (title input, date input, date/clear buttons) has `onPointerDown={(e) => e.stopPropagation()}` so the wrapping DraggableCard's drag listeners don't hijack typing or the picker. The existing PointerSensor `distance:6` constraint already lets a plain click through to open an editor. Removed the now-dead `dragHandleProps` param from `Card` (drag has always lived on the DraggableCard wrapper).
-  - Build + lint clean. **Browser verification batched to end of session (5–7 together).**
+  - Build + lint clean. Behaviour browser-verified — see the step 5–7 verification block below.
 - **Step 6:** Completion via `onUpdateCard(id, { completed_at })` (optimistic; same rollback path). Checkbox top-right of each card (`onPointerDown` stop so dnd-kit ignores it). Completed style: card `opacity-70`, title `line-through text-slate-500`, label chip + left border drop to neutral gray (`#475569`) — colour returns on uncheck since the label is render-derived.
   - **Layout/animation interpretation (documented deviation):** `Column` splits its sorted cards into `active` (no `completed_at`) on top and `completed` at the bottom, rendered in ONE keyed list (`[...active, ...completed]`) so a card moving between groups keeps its DOM node and the collapse transition can play. Each card is wrapped in a `Collapsible` using the grid `1fr→0fr` trick (700ms) — the spacing padding lives *inside* the collapsing region, so a hidden card leaves no gap (replaced the old `gap-2` with per-card `pb-2`).
   - `showCompleted` is per-column state defaulting to `!isCol2`: **col 2 hides completed by default** (so checking a card there fades + slides it out, ~700ms), **all other columns show completed by default** in muted style ("keep it visible"). The "Show completed (N)" / "Hide completed" toggle (rendered whenever a column has ≥1 completed card) collapses/re-reveals that group — this is the "re-revealing faded col-2 cards" behaviour. *SPEC says the toggle is "hidden by default"; I read that as describing col 2 (the highlighted case) and made the toggle uniform across columns with a per-column default, rather than hiding completed cards in the non-col-2 columns where SPEC also says to keep them visible.*
   - Cards aren't deleted on completion — they stay in the DB for the 02:15 `dismiss_completed_cards` cron; DELETE will surface via Realtime (step 7).
-  - Build + lint clean. **Browser verification batched to end of session (5–7 together).**
+  - Build + lint clean. Behaviour browser-verified — see the step 5–7 verification block below.
 - **Step 7:** Single `cards-changes` channel in `useBoard`, `event: '*'`, `filter: user_id=eq.<me>`, `removeChannel` on unmount. Handler updates the flat list by id (INSERT adds w/ existence guard, UPDATE replaces, DELETE removes by `old.id`); the board memo re-sorts affected columns for free. `addCard` now drops the temp row **and** any realtime echo of the real row before re-adding the canonical row, so a fast self-echo can't duplicate.
   - `set-state-in-effect` lint rule does NOT fire here — the `setCards` lives in the realtime callback (an external subscription handler), not in the effect body, so it's the legitimate pattern.
-  - **DELETE filter caveat:** the `user_id=eq` filter on DELETE events only works if `cards` has `REPLICA IDENTITY FULL` (otherwise the old record carries just the PK and the filter can't match). DB is "already created — don't migrate", and RLS already scopes realtime to the owner, so I left the filter as SPEC asks; if cron DELETEs don't appear live in the browser test, that's the likely cause (a DB-side setting, out of frontend scope) — noted for Kevin.
+  - **DELETE filter caveat (confirmed live):** the `user_id=eq` filter on DELETE events only works if `cards` has `REPLICA IDENTITY FULL` (otherwise the old record carries just the PK and the filter can't match). Verified in the browser pass — a REST DELETE removed the row server-side but did NOT push to the client. Fix is a DB setting for Kevin: `ALTER TABLE public.cards REPLICA IDENTITY FULL;` (see Status follow-up). Frontend handler is correct; INSERT/UPDATE push live.
+- **Rollback hardening (during 5–7 verification):** the browser pass surfaced a real bug — `updateCard`/`moveCard` rolled back with `setCards(prevCards)` (a full-list snapshot). If a card action fired while that card's optimistic insert was still in flight (temp id), the failed `update().eq('id','temp-…')` (400, invalid uuid) rolled back to a stale snapshot that resurrected the temp row, and the realtime echo then re-added the real row → **duplicate card**. Fixed both to revert only the affected card by id (`prev.map(c => c.id===id ? prevValue : c)`), which never clobbers a concurrent insert-swap/realtime change. Re-verified: no duplication.
+  - *Residual edge (left for step 10's optimistic audit):* completing/editing a card in the ~200ms before its insert resolves still fires one harmless `update` on a temp id (400 in console, no UI effect). Worth guarding temp ids then.
+- **Steps 5–7 browser verification — PASS (Playwright, live project, 12/12, 0 console errors).** Fresh user via REST signup, drove the real login form. Confirmed: login→board, 5 columns in order; add-task auto-label (AP Chem chip, border `rgb(6,182,212)`); **inline title edit recolors live** (AP Chem→Physics, border `rgb(6,182,212)`→`rgb(236,72,153)`); **date picker** sets due_date (badge "20 Jun" + DB `2026-06-20`) and **clear** → "Set date" + DB null; **col-2 completion fades/collapses** (wrapper opacity 0, grid rows 0fr) and **"Show completed" re-reveals** it muted + strikethrough; **non-col-2 keeps completed visible** struck-through; **realtime INSERT + UPDATE** appear live with no local action; realtime DELETE noted above. Test cards cleaned up; test user `claude-step567-1781336942@example.com` (id `6d008fa9-…`) left for Kevin to delete. Playwright temp-installed then removed — `package.json`/lock unchanged, only `src/hooks/useBoard.js` changed.
   - **Verify-harness notes (not app issues):** (1) the board is wider than a 1280px viewport (5×w-72 columns), so a drag onto the off-screen rightmost column silently no-ops in automation — widen the viewport (used 1680px) to drag across the whole board. (2) zsh has a reserved read-only integer `$UID`; don't name a shell var `UID` when scripting REST calls (assigning a uuid string to it throws "bad math expression"). Playwright was installed only for this test and uninstalled after; the working tree is unchanged.

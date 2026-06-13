@@ -164,10 +164,13 @@ export function useBoard() {
   )
 
   // Optimistic field update (title, due_date, …). Merges the patch into the flat
-  // list immediately, re-sort is automatic via the memo. Rolls back on failure.
+  // list immediately, re-sort is automatic via the memo. On failure it reverts
+  // only this card (by id) to its prior value — not a full-list snapshot, which
+  // could clobber a concurrent insert-swap or realtime change and duplicate rows.
   const updateCard = useCallback(
     async (cardId, patch) => {
-      const prevCards = cards
+      const prevCard = cards.find((c) => c.id === cardId)
+      if (!prevCard) return { skipped: true }
       setCards((prev) =>
         prev.map((c) => (c.id === cardId ? { ...c, ...patch } : c)),
       )
@@ -176,7 +179,7 @@ export function useBoard() {
         .update(patch)
         .eq('id', cardId)
       if (updateError) {
-        setCards(prevCards)
+        setCards((prev) => prev.map((c) => (c.id === cardId ? prevCard : c)))
         return { error: updateError }
       }
       return { ok: true }
@@ -189,7 +192,6 @@ export function useBoard() {
   // memo. Rolls back the row on failure.
   const moveCard = useCallback(
     async (cardId, toColumnId) => {
-      const prevCards = cards
       const card = cards.find((c) => c.id === cardId)
       if (!card || card.column_id === toColumnId) return { skipped: true }
       const due_date = AUTO_DATE_COLUMNS.has(toColumnId) ? null : card.due_date
@@ -203,7 +205,8 @@ export function useBoard() {
         .update({ column_id: toColumnId, due_date })
         .eq('id', cardId)
       if (updateError) {
-        setCards(prevCards)
+        // Revert only this card (see updateCard) so a concurrent change isn't lost.
+        setCards((prev) => prev.map((c) => (c.id === cardId ? card : c)))
         return { error: updateError }
       }
       return { ok: true }
