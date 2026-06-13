@@ -54,6 +54,47 @@ export function useBoard() {
     }
   }, [loadData])
 
+  // Realtime: keep the flat card list in sync with the server. The board memo
+  // re-sorts affected columns automatically whenever this list changes, so the
+  // handler only has to add/replace/remove by id. Filtered to the current user;
+  // INSERT dedupes by id so our own optimistic rows don't double up when the
+  // self-echo arrives, and DELETE makes the 02:15 cron dismissal appear live.
+  useEffect(() => {
+    const channel = supabase
+      .channel('cards-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'cards',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          setCards((prev) => {
+            if (payload.eventType === 'INSERT') {
+              return prev.some((c) => c.id === payload.new.id)
+                ? prev
+                : [...prev, payload.new]
+            }
+            if (payload.eventType === 'UPDATE') {
+              return prev.map((c) =>
+                c.id === payload.new.id ? payload.new : c,
+              )
+            }
+            if (payload.eventType === 'DELETE') {
+              return prev.filter((c) => c.id !== payload.old.id)
+            }
+            return prev
+          })
+        },
+      )
+      .subscribe()
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [user.id])
+
   // Background refetch for event-handler / Realtime callers (not effects), so
   // it doesn't flip back to a spinner.
   const refetch = useCallback(async () => {
@@ -111,7 +152,12 @@ export function useBoard() {
         setCards((prev) => prev.filter((c) => c.id !== tempId))
         return { error: insertError }
       }
-      setCards((prev) => prev.map((c) => (c.id === tempId ? data : c)))
+      // Drop the temp row and any Realtime echo of the real row, then add the
+      // canonical row once — so a fast self-echo can't leave a duplicate.
+      setCards((prev) => [
+        ...prev.filter((c) => c.id !== tempId && c.id !== data.id),
+        data,
+      ])
       return { data }
     },
     [user.id],

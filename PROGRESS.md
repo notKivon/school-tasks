@@ -5,9 +5,9 @@
 **After finishing each step:** test it, update this file (tick the box, set Current/Next, add notes), then `git add -A && git commit` and push. A commit = a working, tested state. Never commit a half-finished step.
 
 ## Status
-- **Current step:** 7 — Realtime *(not started)*
-- **Next step:** 8 — ICS Edge Function
-- **Last good commit:** step 6 — completion + dismissal UI (build + lint clean; **browser verification of 5–7 pending**, batched for the end of this session)
+- **Current step:** 8 — ICS Edge Function *(not started)*
+- **Next step:** 9 — PWA
+- **Last good commit:** step 7 — Realtime (build + lint clean; **browser verification of 5–7 in progress** — see step-7 notes)
 - **Build healthy (`npm run build` passes):** ☑
 
 > 📌 **Follow-up for Kevin (not blocking):**
@@ -25,7 +25,7 @@
 - [x] **4. Core board** — `useBoard.js` (no Realtime yet), `BoardPage`, `Column`, `Card`, @dnd-kit between-columns drag, add-task input.
 - [x] **5. Custom due dates + title editing** — cols 1/5 date picker + clear; inline title edit with live label update.
 - [x] **6. Completion + dismissal UI** — checkbox, completed style, col-2 fade-out, "Show completed" toggle.
-- [ ] **7. Realtime** — add the `cards` subscription to `useBoard.js` (INSERT/UPDATE/DELETE, filtered to me, re-sort, cleanup).
+- [x] **7. Realtime** — add the `cards` subscription to `useBoard.js` (INSERT/UPDATE/DELETE, filtered to me, re-sort, cleanup).
 - [ ] **8. ICS Edge Function** — `index.ts`, `verify_jwt = false` in `config.toml`, deploy with `--no-verify-jwt`, Calendar header button + popover.
 - [ ] **9. PWA** — vite-plugin-pwa, manifest, icons, workbox, install prompt, offline banner.
 - [ ] **10. Polish + build** — optimistic-UI audit (instant update + rollback toast everywhere), toast system, midnight re-sort, overdue badge, keyboard shortcuts; `npm run build` clean; `npm run preview` works; verify no secret key in the bundle.
@@ -64,4 +64,7 @@
   - `showCompleted` is per-column state defaulting to `!isCol2`: **col 2 hides completed by default** (so checking a card there fades + slides it out, ~700ms), **all other columns show completed by default** in muted style ("keep it visible"). The "Show completed (N)" / "Hide completed" toggle (rendered whenever a column has ≥1 completed card) collapses/re-reveals that group — this is the "re-revealing faded col-2 cards" behaviour. *SPEC says the toggle is "hidden by default"; I read that as describing col 2 (the highlighted case) and made the toggle uniform across columns with a per-column default, rather than hiding completed cards in the non-col-2 columns where SPEC also says to keep them visible.*
   - Cards aren't deleted on completion — they stay in the DB for the 02:15 `dismiss_completed_cards` cron; DELETE will surface via Realtime (step 7).
   - Build + lint clean. **Browser verification batched to end of session (5–7 together).**
+- **Step 7:** Single `cards-changes` channel in `useBoard`, `event: '*'`, `filter: user_id=eq.<me>`, `removeChannel` on unmount. Handler updates the flat list by id (INSERT adds w/ existence guard, UPDATE replaces, DELETE removes by `old.id`); the board memo re-sorts affected columns for free. `addCard` now drops the temp row **and** any realtime echo of the real row before re-adding the canonical row, so a fast self-echo can't duplicate.
+  - `set-state-in-effect` lint rule does NOT fire here — the `setCards` lives in the realtime callback (an external subscription handler), not in the effect body, so it's the legitimate pattern.
+  - **DELETE filter caveat:** the `user_id=eq` filter on DELETE events only works if `cards` has `REPLICA IDENTITY FULL` (otherwise the old record carries just the PK and the filter can't match). DB is "already created — don't migrate", and RLS already scopes realtime to the owner, so I left the filter as SPEC asks; if cron DELETEs don't appear live in the browser test, that's the likely cause (a DB-side setting, out of frontend scope) — noted for Kevin.
   - **Verify-harness notes (not app issues):** (1) the board is wider than a 1280px viewport (5×w-72 columns), so a drag onto the off-screen rightmost column silently no-ops in automation — widen the viewport (used 1680px) to drag across the whole board. (2) zsh has a reserved read-only integer `$UID`; don't name a shell var `UID` when scripting REST calls (assigning a uuid string to it throws "bad math expression"). Playwright was installed only for this test and uninstalled after; the working tree is unchanged.
