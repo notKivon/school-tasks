@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
-import Card from './Card.jsx'
+import { useDroppable } from '@dnd-kit/core'
+import DraggableCard from './DraggableCard.jsx'
 import { formatDisplayDate } from '../lib/dates.js'
 
 // One board column: title, its calculated due date in muted text (auto-date
@@ -10,6 +11,9 @@ export default function Column({ column, onAddCard }) {
   const [adding, setAdding] = useState(false)
   const [title, setTitle] = useState('')
   const inputRef = useRef(null)
+  // Drop target = the whole column (id = the column's numeric id, matching the
+  // value moveCard expects). Highlights while a card hovers over it.
+  const { setNodeRef, isOver } = useDroppable({ id: column.id })
 
   async function commit() {
     const trimmed = title.trim()
@@ -39,9 +43,14 @@ export default function Column({ column, onAddCard }) {
         )}
       </header>
 
-      <div className="flex flex-1 flex-col gap-2">
+      <div
+        ref={setNodeRef}
+        className={`flex min-h-24 flex-1 flex-col gap-2 rounded-lg transition-colors ${
+          isOver ? 'bg-slate-800/40 outline outline-1 outline-slate-600' : ''
+        }`}
+      >
         {column.cards.map((card) => (
-          <Card
+          <DraggableCard
             key={card.id}
             card={card}
             isCustomDateColumn={isCustomDateColumn}
