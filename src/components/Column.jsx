@@ -53,17 +53,24 @@ export default function Column({
   // play (the col-2 fade-out) instead of snapping.
   const ordered = [...active, ...completed]
 
-  async function commit() {
+  // keepOpen (Enter with text) leaves the input open + focused so the next card
+  // can be typed straight away; a plain blur (keepOpen false) closes it.
+  async function commit({ keepOpen = false } = {}) {
     const trimmed = title.trim()
-    setAdding(false)
     setTitle('')
+    if (keepOpen) {
+      requestAnimationFrame(() => inputRef.current?.focus())
+    } else {
+      setAdding(false)
+    }
     if (trimmed) await onAddCard(column.id, trimmed)
   }
 
   function handleKeyDown(e) {
     if (e.key === 'Enter') {
       e.preventDefault()
-      commit()
+      // Enter on an empty input means "done" → close; otherwise add + stay open.
+      commit({ keepOpen: title.trim().length > 0 })
     } else if (e.key === 'Escape') {
       setAdding(false)
       setTitle('')
@@ -123,7 +130,7 @@ export default function Column({
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           onKeyDown={handleKeyDown}
-          onBlur={commit}
+          onBlur={() => commit()}
           placeholder="Task title…"
           className="mt-2 w-full rounded-md border border-slate-700 bg-slate-800 px-2 py-1.5 text-sm text-slate-100 outline-none focus:border-slate-500"
         />
