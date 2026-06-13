@@ -2,6 +2,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './lib/auth.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import BoardPage from './pages/BoardPage.jsx'
+import OfflineBanner from './components/OfflineBanner.jsx'
+import InstallPrompt from './components/InstallPrompt.jsx'
 
 function FullScreenLoader() {
   return (
@@ -30,6 +32,8 @@ function RedirectIfAuth({ children }) {
 function App() {
   return (
     <BrowserRouter>
+      <OfflineBanner />
+      <InstallPrompt />
       <Routes>
         <Route
           path="/login"

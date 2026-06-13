@@ -5,9 +5,9 @@
 **After finishing each step:** test it, update this file (tick the box, set Current/Next, add notes), then `git add -A && git commit` and push. A commit = a working, tested state. Never commit a half-finished step.
 
 ## Status
-- **Current step:** 9 — PWA *(not started)*
-- **Next step:** 10 — Polish + build
-- **Last good commit:** step 8 — ICS Edge Function **deployed + live-verified** (feed returns valid ICS; build + lint clean)
+- **Current step:** 10 — Polish + build *(not started)*
+- **Next step:** 11 — Hand back to Kevin (manual: Vercel + Auth URL + domain)
+- **Last good commit:** step 9 — PWA (manifest + SW + install prompt + offline banner); build/lint clean, preview-verified
 - **Build healthy (`npm run build` passes):** ☑
 
 > 📌 **Follow-up for Kevin (not blocking):**
@@ -37,7 +37,7 @@
 - [x] **6. Completion + dismissal UI** — checkbox, completed style, col-2 fade-out, "Show completed" toggle.
 - [x] **7. Realtime** — add the `cards` subscription to `useBoard.js` (INSERT/UPDATE/DELETE, filtered to me, re-sort, cleanup).
 - [x] **8. ICS Edge Function** — `index.ts`, `verify_jwt = false` in `config.toml`, deploy with `--no-verify-jwt`, Calendar header button + popover. *(Deployed + live-verified — see step-8 notes.)*
-- [ ] **9. PWA** — vite-plugin-pwa, manifest, icons, workbox, install prompt, offline banner.
+- [x] **9. PWA** — vite-plugin-pwa, manifest, icons, workbox, install prompt, offline banner. *(Build/lint clean, preview-verified — see step-9 notes.)*
 - [ ] **10. Polish + build** — optimistic-UI audit (instant update + rollback toast everywhere), toast system, midnight re-sort, overdue badge, keyboard shortcuts; `npm run build` clean; `npm run preview` works; verify no secret key in the bundle.
 - [ ] **11. Hand back to me (manual)** — Vercel import + env vars + deploy; Supabase Auth URL config; custom domain + DNS. **Stop and give me the runbook — don't attempt these yourself.**
 
@@ -85,3 +85,7 @@
   - **Import gotcha:** the JSR import `jsr:@supabase/supabase-js@2` fails to bundle (`JSR package manifest … 403 Forbidden`). Use `https://esm.sh/@supabase/supabase-js@2` instead — bundles + deploys fine (59 kB).
   - Function reads `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` from `Deno.env` (auto-injected); queries cards where `due_date` is non-null AND `completed_at IS NULL`; joins `columns` (separate query → Map) for the DESCRIPTION = column name. RFC-5545 text escaping (`\ ; , \n`) + 75-octet line folding. Event = day before `due_date` at `T235900` for both DTSTART/DTEND (UTC calendar math, no tz drift). UID = `<card-uuid>@school-tasks`.
   - **Live-verified (curl):** no `uid` → 400; public GET with no Authorization header → 200 (confirms `--no-verify-jwt`; without it the feed 401s); `Content-Type: text/calendar; charset=utf-8`; empty user → valid empty VCALENDAR. Seeded a test user with 4 cards: a col-1 dated card with a comma in the title, a col-5 dated card, a completed dated card, and a no-date card → feed contained exactly the 2 active dated VEVENTs with correct day-before dates (`2026-06-20`→`20260619T235900`, `2026-07-01`→`20260630T235900`), comma escaped (`AP Chem test\, unit 3`), DESCRIPTION = "Upcoming Tests"/"Later"; the completed + no-date cards were correctly excluded. Test cards deleted afterward; test user left for Kevin (see Status follow-up).
+- **Step 9:** `vite-plugin-pwa` (`registerType: 'autoUpdate'`, `generateSW`). Manifest in `vite.config.js` (name "School Tasks", short "Tasks", `display: standalone`, `start_url: /board`, dark `#0f172a` theme/background). Icons: `public/pwa-192.svg` + `public/pwa-512.svg` (dark rounded-square bg + white checklist; 512 master, 192 references the same viewBox; `any` + `maskable` entries). Workbox: precache app shell (`js,css,html,svg,ico,png,woff2`), `navigateFallback: /index.html` (so an offline `/board` shows the cached shell, not blank; `/functions/` denylisted), and one `NetworkFirst` runtime rule for `*.supabase.co` (5s timeout, 1-day cache). `index.html` gained `theme-color` + `apple-touch-icon`.
+  - **`InstallPrompt.jsx`** — listens for `beforeinstallprompt`, shows a bottom-left "Install App" button; "Not now" persists dismissal in `localStorage` (`school-tasks-install-dismissed`) and the listener short-circuits if already dismissed. **`OfflineBanner.jsx`** — `navigator.onLine` + online/offline events → sticky amber banner. Both rendered app-wide in `App.jsx` inside `BrowserRouter`.
+  - SW registration is auto-injected by the plugin (`injectRegister: 'auto'` default) — no manual `virtual:pwa-register` import, so no eslint unresolved-virtual-module noise. Dev server doesn't emit a SW (no `devOptions.enabled`); it only exists in build/preview, which is fine.
+  - **Verified:** `npm run build` clean (PWA v1.3.0, generateSW, 11 precache entries) + lint clean; `manifest.webmanifest`, `sw.js`, `workbox-*.js`, `registerSW.js` all generated and injected into `dist/index.html`; `sw.js` contains the `NetworkFirst` + `supabase.co` + `index.html` fallback. `npm run preview` serves `/`, `/manifest.webmanifest` (`application/manifest+json`), `/sw.js`, `/pwa-512.svg`, and `/board` (SPA fallback) all 200. Bundle scan found no `service_role`/secret strings (early check for step 10). *Not testable headless: the actual install gesture + true offline cache hit — those need a real Chrome session.*
