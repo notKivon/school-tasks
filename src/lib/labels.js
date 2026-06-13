@@ -35,6 +35,23 @@ export function detectLabel(title) {
   return null
 }
 
+// The title to *display* on a card: the leading class name is stripped off
+// (it's shown as the chip + border instead), so "AP Chem problems" renders as
+// "problems". The full title is always what's stored, sorted on, and edited —
+// this only affects the read-only card text. After the class name we also eat a
+// leading separator (":", "-", "–", "—") and surrounding spaces. If stripping
+// would leave nothing (the title is *only* a class name), keep the full title so
+// the card never renders blank.
+export function getDisplayTitle(title) {
+  const label = detectLabel(title)
+  if (!label) return title
+  const rest = title
+    .trimStart()
+    .slice(label.name.length)
+    .replace(/^[\s:–—-]+/, '')
+  return rest || title
+}
+
 // Priority index for sorting: 0–7 for a known class, 8 for unrecognised/none.
 export function getPriorityIndex(label) {
   if (!label) return CLASS_PRIORITY.length

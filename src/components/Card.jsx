@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { detectLabel } from '../lib/labels.js'
+import { detectLabel, getDisplayTitle } from '../lib/labels.js'
 import { formatDisplayDate } from '../lib/dates.js'
 
 // A single task card. The class label is derived from the title at render time
@@ -16,6 +16,7 @@ export default function Card({
   isCustomDateColumn,
   onUpdateCard,
   onDeleteCard,
+  onRequestNewCard,
 }) {
   const label = detectLabel(card.title)
   const completed = !!card.completed_at
@@ -30,6 +31,9 @@ export default function Card({
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleDraft, setTitleDraft] = useState(card.title)
   const cancelledRef = useRef(false)
+  // Set when the edit is committed via Enter (vs. a plain blur), so commitTitle
+  // knows to open a fresh blank card in this column afterwards.
+  const enterRef = useRef(false)
 
   const [editingDate, setEditingDate] = useState(false)
   const dateRef = useRef(null)
@@ -53,6 +57,8 @@ export default function Card({
   // Commit on blur (Enter blurs the input, Escape sets the cancel flag first).
   function commitTitle() {
     setEditingTitle(false)
+    const viaEnter = enterRef.current
+    enterRef.current = false
     if (cancelledRef.current) {
       cancelledRef.current = false
       return
@@ -61,11 +67,15 @@ export default function Card({
     if (trimmed && trimmed !== card.title) {
       onUpdateCard?.(card.id, { title: trimmed }, { successMessage: 'Task saved' })
     }
+    // Committing with Enter opens a fresh blank card in this column for rapid
+    // entry (blur alone just saves and stops).
+    if (viaEnter) onRequestNewCard?.()
   }
 
   function handleTitleKey(e) {
     if (e.key === 'Enter') {
       e.preventDefault()
+      enterRef.current = true
       e.target.blur()
     } else if (e.key === 'Escape') {
       e.preventDefault()
@@ -171,7 +181,7 @@ export default function Card({
           onClick={startTitleEdit}
           className={`cursor-text text-sm ${completed ? 'text-slate-500 line-through' : 'text-slate-100'}`}
         >
-          {card.title}
+          {getDisplayTitle(card.title)}
         </p>
       )}
 

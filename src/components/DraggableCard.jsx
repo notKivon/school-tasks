@@ -12,6 +12,7 @@ export default function DraggableCard({
   isCustomDateColumn,
   onUpdateCard,
   onDeleteCard,
+  onRequestNewCard,
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: card.id,
@@ -30,6 +31,7 @@ export default function DraggableCard({
         isCustomDateColumn={isCustomDateColumn}
         onUpdateCard={onUpdateCard}
         onDeleteCard={onDeleteCard}
+        onRequestNewCard={onRequestNewCard}
       />
     </div>
   )

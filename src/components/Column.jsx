@@ -98,6 +98,7 @@ export default function Column({
               isCustomDateColumn={isCustomDateColumn}
               onUpdateCard={onUpdateCard}
               onDeleteCard={onDeleteCard}
+              onRequestNewCard={openAdd}
             />
           </Collapsible>
         ))}
