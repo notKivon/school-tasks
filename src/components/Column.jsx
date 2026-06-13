@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useDroppable } from '@dnd-kit/core'
 import DraggableCard from './DraggableCard.jsx'
 import { formatDisplayDate } from '../lib/dates.js'
@@ -12,13 +12,36 @@ import { formatDisplayDate } from '../lib/dates.js'
 // from the DB); every other column keeps completed cards visible in the muted
 // completed style. A per-column "Show completed" toggle (col 2 starts hidden,
 // the rest start shown) collapses/re-reveals that completed group.
-export default function Column({ column, onAddCard, onUpdateCard }) {
+export default function Column({
+  column,
+  today,
+  onAddCard,
+  onUpdateCard,
+  onDeleteCard,
+  addOpenerRef,
+}) {
   const isCustomDateColumn = column.id === 1 || column.id === 5
   const isCol2 = column.id === 2
   const [adding, setAdding] = useState(false)
   const [title, setTitle] = useState('')
   const [showCompleted, setShowCompleted] = useState(!isCol2)
   const inputRef = useRef(null)
+
+  // Open the Add-task input and focus it; registered with the parent so the `N`
+  // shortcut can trigger it on the first column. setAdding here runs from a key
+  // event (not an effect), so the set-state-in-effect rule doesn't apply.
+  const openAdd = useCallback(() => {
+    setAdding(true)
+    requestAnimationFrame(() => inputRef.current?.focus())
+  }, [])
+
+  useEffect(() => {
+    if (!addOpenerRef) return
+    addOpenerRef.current = openAdd
+    return () => {
+      addOpenerRef.current = null
+    }
+  }, [addOpenerRef, openAdd])
   // Drop target = the whole column (id = the column's numeric id, matching the
   // value moveCard expects). Highlights while a card hovers over it.
   const { setNodeRef, isOver } = useDroppable({ id: column.id })
@@ -71,8 +94,10 @@ export default function Column({ column, onAddCard, onUpdateCard }) {
           >
             <DraggableCard
               card={card}
+              today={today}
               isCustomDateColumn={isCustomDateColumn}
               onUpdateCard={onUpdateCard}
+              onDeleteCard={onDeleteCard}
             />
           </Collapsible>
         ))}

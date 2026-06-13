@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../lib/auth.jsx'
+import { useToast } from '../lib/toast.jsx'
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 
@@ -7,6 +8,7 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 // and Sign Out.
 export default function Header() {
   const { user, signOut } = useAuth()
+  const toast = useToast()
   const [calOpen, setCalOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   const popoverRef = useRef(null)
@@ -39,8 +41,10 @@ export default function Header() {
       await navigator.clipboard.writeText(icsUrl)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
+      toast.info('Calendar link copied')
     } catch {
       setCopied(false)
+      toast.error("Couldn't copy — select and copy the link manually")
     }
   }
 

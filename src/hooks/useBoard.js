@@ -1,22 +1,34 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../lib/auth.jsx'
+import { useToast } from '../lib/toast.jsx'
 import { sortCards } from '../lib/sorting.js'
-import { getColumnDueDate } from '../lib/dates.js'
+import {
+  getColumnDueDate,
+  getTodayHKT,
+  msUntilNextHKTMidnight,
+} from '../lib/dates.js'
 
 // Columns 2/3/4 are auto-dated: a card there has no custom due_date and adopts
 // the column's calculated date. Columns 1/5 keep the card's own due_date.
 const AUTO_DATE_COLUMNS = new Set([2, 3, 4])
+
+// Cards still being inserted carry a "temp-" id (not a real uuid). Any DB write
+// keyed on one would 400, so card actions skip the server round-trip for them.
+const isTempId = (id) => String(id).startsWith('temp-')
 
 // Fetch the 5 fixed columns + the current user's cards, group by column_id and
 // sort per the domain rules. Owns the flat card list so card actions can update
 // it optimistically. Realtime is layered on in a later step.
 export function useBoard() {
   const { user } = useAuth()
+  const toast = useToast()
   const [columns, setColumns] = useState([])
   const [cards, setCards] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  // Bumped at each HKT midnight so the board re-derives column dates + re-sorts.
+  const [today, setToday] = useState(getTodayHKT())
 
   // Pure fetch — no setState — so it can be shared by the mount effect and the
   // exported refetch without either owning the other's state updates.
@@ -95,6 +107,22 @@ export function useBoard() {
     }
   }, [user.id])
 
+  // Roll the board over at HKT midnight without a refresh: schedule a timer to
+  // the next midnight, bump `today` (which the board memo + overdue badges
+  // depend on), then reschedule. setState lives in the timeout callback (not the
+  // effect body), so the set-state-in-effect rule doesn't fire.
+  useEffect(() => {
+    let timer
+    function schedule() {
+      timer = setTimeout(() => {
+        setToday(getTodayHKT())
+        schedule()
+      }, msUntilNextHKTMidnight() + 1000)
+    }
+    schedule()
+    return () => clearTimeout(timer)
+  }, [])
+
   // Background refetch for event-handler / Realtime callers (not effects), so
   // it doesn't flip back to a spinner.
   const refetch = useCallback(async () => {
@@ -114,13 +142,15 @@ export function useBoard() {
     () =>
       columns.map((col) => ({
         ...col,
-        dueDate: getColumnDueDate(col.id),
+        dueDate: getColumnDueDate(col.id, today),
         cards: sortCards(
           cards.filter((c) => c.column_id === col.id),
           col.id,
         ),
       })),
-    [columns, cards],
+    // `today` feeds getColumnDueDate, so the board recomputes (re-dates +
+    // re-sorts) when the day rolls over at HKT midnight.
+    [columns, cards, today],
   )
 
   // Optimistic insert: show a temp card immediately, then swap in the real row
@@ -150,6 +180,7 @@ export function useBoard() {
         .single()
       if (insertError) {
         setCards((prev) => prev.filter((c) => c.id !== tempId))
+        toast.error("Couldn't add task — try again")
         return { error: insertError }
       }
       // Drop the temp row and any Realtime echo of the real row, then add the
@@ -158,9 +189,10 @@ export function useBoard() {
         ...prev.filter((c) => c.id !== tempId && c.id !== data.id),
         data,
       ])
+      toast.success('Task added')
       return { data }
     },
-    [user.id],
+    [user.id, toast],
   )
 
   // Optimistic field update (title, due_date, …). Merges the patch into the flat
@@ -168,23 +200,53 @@ export function useBoard() {
   // only this card (by id) to its prior value — not a full-list snapshot, which
   // could clobber a concurrent insert-swap or realtime change and duplicate rows.
   const updateCard = useCallback(
-    async (cardId, patch) => {
+    async (cardId, patch, opts = {}) => {
       const prevCard = cards.find((c) => c.id === cardId)
       if (!prevCard) return { skipped: true }
+      // Apply optimistically even for an in-flight (temp) card, but don't write
+      // a temp id to the DB — that row doesn't exist server-side yet.
       setCards((prev) =>
         prev.map((c) => (c.id === cardId ? { ...c, ...patch } : c)),
       )
+      if (isTempId(cardId)) return { skipped: true }
       const { error: updateError } = await supabase
         .from('cards')
         .update(patch)
         .eq('id', cardId)
       if (updateError) {
         setCards((prev) => prev.map((c) => (c.id === cardId ? prevCard : c)))
+        toast.error(opts.errorMessage || 'Sync failed — change reverted')
         return { error: updateError }
       }
+      if (opts.successMessage) toast.success(opts.successMessage)
       return { ok: true }
     },
-    [cards],
+    [cards, toast],
+  )
+
+  // Optimistic delete (the per-card trash). Removes the row immediately; on
+  // failure it re-adds the card and toasts. Skips the DB call for temp ids.
+  const deleteCard = useCallback(
+    async (cardId) => {
+      const prevCard = cards.find((c) => c.id === cardId)
+      if (!prevCard) return { skipped: true }
+      setCards((prev) => prev.filter((c) => c.id !== cardId))
+      if (isTempId(cardId)) return { skipped: true }
+      const { error: deleteError } = await supabase
+        .from('cards')
+        .delete()
+        .eq('id', cardId)
+      if (deleteError) {
+        setCards((prev) =>
+          prev.some((c) => c.id === cardId) ? prev : [...prev, prevCard],
+        )
+        toast.error("Couldn't delete task — restored")
+        return { error: deleteError }
+      }
+      toast.success('Task deleted')
+      return { ok: true }
+    },
+    [cards, toast],
   )
 
   // Optimistic move between columns. Dropping on an auto-date column clears the
@@ -200,6 +262,7 @@ export function useBoard() {
           c.id === cardId ? { ...c, column_id: toColumnId, due_date } : c,
         ),
       )
+      if (isTempId(cardId)) return { skipped: true }
       const { error: updateError } = await supabase
         .from('cards')
         .update({ column_id: toColumnId, due_date })
@@ -207,12 +270,23 @@ export function useBoard() {
       if (updateError) {
         // Revert only this card (see updateCard) so a concurrent change isn't lost.
         setCards((prev) => prev.map((c) => (c.id === cardId ? card : c)))
+        toast.error("Couldn't move card — reverted")
         return { error: updateError }
       }
       return { ok: true }
     },
-    [cards],
+    [cards, toast],
   )
 
-  return { board, loading, error, refetch, addCard, updateCard, moveCard }
+  return {
+    board,
+    today,
+    loading,
+    error,
+    refetch,
+    addCard,
+    updateCard,
+    moveCard,
+    deleteCard,
+  }
 }

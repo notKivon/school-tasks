@@ -40,6 +40,20 @@ export function getTodayHKT() {
   return toDateString(new Date(Date.now() + HKT_OFFSET_MS))
 }
 
+// Milliseconds from now until the next HKT midnight — used to schedule a
+// re-sort/relabel of the board when the day rolls over (no refresh needed).
+export function msUntilNextHKTMidnight() {
+  const nowHkt = Date.now() + HKT_OFFSET_MS
+  const d = new Date(nowHkt)
+  // Next HKT midnight, expressed on the same HKT-as-UTC clock.
+  const nextMidnight = Date.UTC(
+    d.getUTCFullYear(),
+    d.getUTCMonth(),
+    d.getUTCDate() + 1,
+  )
+  return nextMidnight - nowHkt
+}
+
 // Next Mon–Fri strictly after `fromDate` ("YYYY-MM-DD").
 export function getNextSchoolDay(fromDate) {
   let d = parseDate(fromDate)
@@ -64,8 +78,9 @@ export function formatDisplayDate(dateStr) {
 // Auto-calculated due date for the auto-date columns; null for custom columns.
 //   2 Today/Due, 3 Next School Day, 4 Subsequent School Day
 //   1 Upcoming Tests, 5 Later → null (user-set)
-export function getColumnDueDate(columnId) {
-  const today = getTodayHKT()
+// `today` is injectable so callers (e.g. the board memo) can pass the value they
+// re-derive at HKT midnight, keeping the calc and the recompute in lockstep.
+export function getColumnDueDate(columnId, today = getTodayHKT()) {
   switch (columnId) {
     case 2:
       return today

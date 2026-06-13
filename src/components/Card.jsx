@@ -10,9 +10,18 @@ import { formatDisplayDate } from '../lib/dates.js'
 // the new title updates the chip + border live, since the label is never stored.
 // Pointer-down on the inline editors is stopped so dnd-kit's drag listeners (on
 // the wrapping DraggableCard) don't hijack typing or the date picker.
-export default function Card({ card, isCustomDateColumn, onUpdateCard }) {
+export default function Card({
+  card,
+  today,
+  isCustomDateColumn,
+  onUpdateCard,
+  onDeleteCard,
+}) {
   const label = detectLabel(card.title)
   const completed = !!card.completed_at
+  // "Today / Due" (col 2) cards carrying a due_date earlier than today are late.
+  const overdue =
+    card.column_id === 2 && card.due_date && today && card.due_date < today
   // Completed cards are muted: the class color drops to neutral gray and the
   // title is struck through (the chip/border colour returns the moment it's
   // unchecked, since the label is always re-derived from the title at render).
@@ -50,7 +59,7 @@ export default function Card({ card, isCustomDateColumn, onUpdateCard }) {
     }
     const trimmed = titleDraft.trim()
     if (trimmed && trimmed !== card.title) {
-      onUpdateCard?.(card.id, { title: trimmed })
+      onUpdateCard?.(card.id, { title: trimmed }, { successMessage: 'Task saved' })
     }
   }
 
@@ -68,12 +77,20 @@ export default function Card({ card, isCustomDateColumn, onUpdateCard }) {
   function commitDate(value) {
     setEditingDate(false)
     const next = value || null
-    if (next !== card.due_date) onUpdateCard?.(card.id, { due_date: next })
+    if (next !== card.due_date) {
+      onUpdateCard?.(card.id, { due_date: next }, {
+        successMessage: next ? 'Due date set' : 'Due date cleared',
+      })
+    }
   }
 
   function clearDate(e) {
     e.stopPropagation()
-    if (card.due_date !== null) onUpdateCard?.(card.id, { due_date: null })
+    if (card.due_date !== null) {
+      onUpdateCard?.(card.id, { due_date: null }, {
+        successMessage: 'Due date cleared',
+      })
+    }
   }
 
   function toggleComplete(e) {
@@ -84,28 +101,59 @@ export default function Card({ card, isCustomDateColumn, onUpdateCard }) {
 
   return (
     <div
-      className={`rounded-lg border-l-4 bg-slate-800 p-3 shadow-sm ${completed ? 'opacity-70' : ''}`}
+      className={`group relative rounded-lg border-l-4 bg-slate-800 p-3 shadow-sm ${completed ? 'opacity-70' : ''}`}
       style={{ borderLeftColor: borderColor }}
     >
       <div className="mb-1.5 flex items-start justify-between gap-2">
-        {label ? (
-          <span
-            className="inline-block rounded px-1.5 py-0.5 text-[10px] font-medium text-white"
-            style={{ backgroundColor: borderColor }}
-          >
-            {label.name}
-          </span>
-        ) : (
-          <span />
-        )}
-        <input
-          type="checkbox"
-          checked={completed}
-          onChange={toggleComplete}
-          onPointerDown={(e) => e.stopPropagation()}
-          aria-label={completed ? 'Mark incomplete' : 'Mark complete'}
-          className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-slate-400"
-        />
+        <div className="flex flex-wrap items-center gap-1">
+          {label ? (
+            <span
+              className="inline-block rounded px-1.5 py-0.5 text-[10px] font-medium text-white"
+              style={{ backgroundColor: borderColor }}
+            >
+              {label.name}
+            </span>
+          ) : null}
+          {overdue && !completed && (
+            <span className="inline-block rounded bg-red-600 px-1.5 py-0.5 text-[10px] font-medium text-white">
+              Overdue
+            </span>
+          )}
+        </div>
+        <div className="flex shrink-0 items-center gap-1.5">
+          {onDeleteCard && (
+            <button
+              type="button"
+              onClick={() => onDeleteCard(card.id)}
+              onPointerDown={(e) => e.stopPropagation()}
+              aria-label="Delete task"
+              className="text-slate-500 opacity-0 transition-opacity hover:text-red-400 group-hover:opacity-100"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-4 w-4"
+              >
+                <path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m2 0v14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V6" />
+                <line x1="10" y1="11" x2="10" y2="17" />
+                <line x1="14" y1="11" x2="14" y2="17" />
+              </svg>
+            </button>
+          )}
+          <input
+            type="checkbox"
+            checked={completed}
+            onChange={toggleComplete}
+            onPointerDown={(e) => e.stopPropagation()}
+            aria-label={completed ? 'Mark incomplete' : 'Mark complete'}
+            className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-slate-400"
+          />
+        </div>
       </div>
 
       {editingTitle ? (

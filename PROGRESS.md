@@ -5,9 +5,9 @@
 **After finishing each step:** test it, update this file (tick the box, set Current/Next, add notes), then `git add -A && git commit` and push. A commit = a working, tested state. Never commit a half-finished step.
 
 ## Status
-- **Current step:** 10 — Polish + build *(not started)*
-- **Next step:** 11 — Hand back to Kevin (manual: Vercel + Auth URL + domain)
-- **Last good commit:** step 9 — PWA (manifest + SW + install prompt + offline banner); build/lint clean, preview-verified
+- **Current step:** 11 — Hand back to Kevin (manual: Vercel + Auth URL + domain) *(STOP — this is yours)*
+- **Next step:** — (last build step done)
+- **Last good commit:** step 10 — Polish (toasts, delete, temp-id guards, midnight re-sort, overdue badge, keyboard N); build/lint clean, browser-verified (6/6), no secret in bundle
 - **Build healthy (`npm run build` passes):** ☑
 
 > 📌 **Follow-up for Kevin (not blocking):**
@@ -15,7 +15,8 @@
 >    service-role key; their cards are already cleaned up):
 >    `claude-smoke-1781334775@example.com` (step-4 smoke test),
 >    `claude-step567-1781336942@example.com` (steps 5–7 verification), and
->    `claude-step8-1781338501@example.com` (step-8 ICS verification).
+>    `claude-step8-1781338501@example.com` (step-8 ICS verification), and
+>    `claude-step10-1781339545@example.com` (step-10 browser verification).
 > 2. **Before production, re-enable "Confirm email"** — I had you turn it off
 >    (`mailer_autoconfirm` is currently true) so I could auto-test the round-trip.
 >    For a real deployment you probably want email confirmation back ON.
@@ -38,7 +39,7 @@
 - [x] **7. Realtime** — add the `cards` subscription to `useBoard.js` (INSERT/UPDATE/DELETE, filtered to me, re-sort, cleanup).
 - [x] **8. ICS Edge Function** — `index.ts`, `verify_jwt = false` in `config.toml`, deploy with `--no-verify-jwt`, Calendar header button + popover. *(Deployed + live-verified — see step-8 notes.)*
 - [x] **9. PWA** — vite-plugin-pwa, manifest, icons, workbox, install prompt, offline banner. *(Build/lint clean, preview-verified — see step-9 notes.)*
-- [ ] **10. Polish + build** — optimistic-UI audit (instant update + rollback toast everywhere), toast system, midnight re-sort, overdue badge, keyboard shortcuts; `npm run build` clean; `npm run preview` works; verify no secret key in the bundle.
+- [x] **10. Polish + build** — optimistic-UI audit (instant update + rollback toast everywhere), toast system, midnight re-sort, overdue badge, keyboard shortcuts; `npm run build` clean; `npm run preview` works; verify no secret key in the bundle. *(Browser-verified — see step-10 notes.)*
 - [ ] **11. Hand back to me (manual)** — Vercel import + env vars + deploy; Supabase Auth URL config; custom domain + DNS. **Stop and give me the runbook — don't attempt these yourself.**
 
 ## Notes / decisions / gotchas
@@ -89,3 +90,10 @@
   - **`InstallPrompt.jsx`** — listens for `beforeinstallprompt`, shows a bottom-left "Install App" button; "Not now" persists dismissal in `localStorage` (`school-tasks-install-dismissed`) and the listener short-circuits if already dismissed. **`OfflineBanner.jsx`** — `navigator.onLine` + online/offline events → sticky amber banner. Both rendered app-wide in `App.jsx` inside `BrowserRouter`.
   - SW registration is auto-injected by the plugin (`injectRegister: 'auto'` default) — no manual `virtual:pwa-register` import, so no eslint unresolved-virtual-module noise. Dev server doesn't emit a SW (no `devOptions.enabled`); it only exists in build/preview, which is fine.
   - **Verified:** `npm run build` clean (PWA v1.3.0, generateSW, 11 precache entries) + lint clean; `manifest.webmanifest`, `sw.js`, `workbox-*.js`, `registerSW.js` all generated and injected into `dist/index.html`; `sw.js` contains the `NetworkFirst` + `supabase.co` + `index.html` fallback. `npm run preview` serves `/`, `/manifest.webmanifest` (`application/manifest+json`), `/sw.js`, `/pwa-512.svg`, and `/board` (SPA fallback) all 200. Bundle scan found no `service_role`/secret strings (early check for step 10). *Not testable headless: the actual install gesture + true offline cache hit — those need a real Chrome session.*
+- **Step 10 (final coding step):** five polish features.
+  - **Toast system** — `src/lib/toast.jsx` (`ToastProvider` + `useToast`, co-located → the same `react-refresh/only-export-components` disable as `auth.jsx`). Bottom-right stack, success/error/info, auto-dismiss 3s, click-to-dismiss. `ToastProvider` wraps `App` inside `AuthProvider` in `main.jsx`. Wired toasts: add → "Task added", title save → "Task saved", date set/cleared → "Due date set"/"Due date cleared", delete → "Task deleted", ICS copy → info "Calendar link copied"; every failed action shows an error toast on rollback ("Sync failed — change reverted", "Couldn't add/move/delete…").
+  - **Optimistic-UI audit + delete** — added `deleteCard` to `useBoard` (optimistic remove → rollback re-add + toast on failure) and the **delete-on-hover trash** to `Card` (SVG button, `opacity-0 group-hover:opacity-100`, `onPointerDown` stop so dnd-kit ignores it; SPEC had listed it under Card but it was never built). `updateCard` gained an `opts` arg (`successMessage`/`errorMessage`). **Temp-id guard** (the residual edge from step 7): `isTempId` short-circuits the DB write in updateCard/moveCard/deleteCard for in-flight `temp-` rows (applies the change locally, skips the server round-trip) — kills the harmless 400s on a uuid-less id.
+  - **Midnight re-sort** — `msUntilNextHKTMidnight()` added to `dates.js`; `useBoard` keeps a `today` state bumped by a self-rescheduling timer at each HKT midnight (setState in the timeout callback, not the effect body → no set-state-in-effect). `getColumnDueDate(columnId, today = getTodayHKT())` now takes `today` so the board memo's `[columns, cards, today]` dependency is real (fixes the exhaustive-deps "unnecessary dep" — the value genuinely feeds the calc). Board re-dates + re-sorts on rollover; `today` also drives the overdue badge.
+  - **Overdue badge** — red "Overdue" chip on col-2 cards whose `due_date` is non-null and `< today` (most col-2 cards have null due_date so it only shows for a server-shifted past-due card). `today` threaded `useBoard → BoardPage → Column → DraggableCard → Card`.
+  - **Keyboard** — `N` (when not typing / no modifier) focuses the first column's Add-task input via an `addOpenerRef` the first `Column` registers (ref-prop must end in `Ref` per `react-hooks/immutability`); `openAdd` calls setState from the key handler, not an effect. Escape-cancels-inputs was already handled per-input (Column add, Card title, Header popover).
+  - **Verified:** build + lint clean. **Browser pass (Playwright, dev server, live user) 6/6, 0 console errors:** login→board; **overdue badge** shows on a REST-seeded col-2 card with a past `due_date`; **add** shows the card + "Task added" toast; **`N`** focuses the Add-task input (`document.activeElement` placeholder = "Task title…"); **delete** fires a `DELETE → 204`, removes the card, and shows "Task deleted" (re-verified robustly after an initial hover/timing flake in the harness — the app was always correct). **No-secret check:** `dist/` has no `service_role`/`sb_secret_`/`SUPABASE_SERVICE_ROLE` strings; the publishable key is present as expected. `npm run preview` serves `/`, `/board`, `/manifest.webmanifest`, `/sw.js` (200). Playwright temp-installed then removed; `package.json`/lock restored to the step-9 state (verified no diff vs HEAD). Test user left for Kevin (see Status follow-up).
