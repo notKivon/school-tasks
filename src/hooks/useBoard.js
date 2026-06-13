@@ -117,6 +117,27 @@ export function useBoard() {
     [user.id],
   )
 
+  // Optimistic field update (title, due_date, …). Merges the patch into the flat
+  // list immediately, re-sort is automatic via the memo. Rolls back on failure.
+  const updateCard = useCallback(
+    async (cardId, patch) => {
+      const prevCards = cards
+      setCards((prev) =>
+        prev.map((c) => (c.id === cardId ? { ...c, ...patch } : c)),
+      )
+      const { error: updateError } = await supabase
+        .from('cards')
+        .update(patch)
+        .eq('id', cardId)
+      if (updateError) {
+        setCards(prevCards)
+        return { error: updateError }
+      }
+      return { ok: true }
+    },
+    [cards],
+  )
+
   // Optimistic move between columns. Dropping on an auto-date column clears the
   // custom due_date; custom-date columns keep it. Re-sort is automatic via the
   // memo. Rolls back the row on failure.
@@ -144,5 +165,5 @@ export function useBoard() {
     [cards],
   )
 
-  return { board, loading, error, refetch, addCard, moveCard }
+  return { board, loading, error, refetch, addCard, updateCard, moveCard }
 }

@@ -6,7 +6,7 @@ import Card from './Card.jsx'
 // working for the inline editors added in later steps. While dragging, the
 // source dims and the moving copy is rendered by the board's DragOverlay (which
 // lives in a portal, so the horizontal-scroll overflow never clips it).
-export default function DraggableCard({ card, isCustomDateColumn }) {
+export default function DraggableCard({ card, isCustomDateColumn, onUpdateCard }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: card.id,
   })
@@ -18,7 +18,11 @@ export default function DraggableCard({ card, isCustomDateColumn }) {
       {...listeners}
       className={`cursor-grab touch-none ${isDragging ? 'opacity-40' : ''}`}
     >
-      <Card card={card} isCustomDateColumn={isCustomDateColumn} />
+      <Card
+        card={card}
+        isCustomDateColumn={isCustomDateColumn}
+        onUpdateCard={onUpdateCard}
+      />
     </div>
   )
 }

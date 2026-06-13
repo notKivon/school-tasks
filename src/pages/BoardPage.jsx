@@ -17,7 +17,7 @@ import { useBoard } from '../hooks/useBoard.js'
 // drag-end handler hands it straight to moveCard, which clears/keeps the due
 // date per the column type and re-sorts via the board memo.
 export default function BoardPage() {
-  const { board, loading, error, addCard, moveCard } = useBoard()
+  const { board, loading, error, addCard, updateCard, moveCard } = useBoard()
   const [activeCard, setActiveCard] = useState(null)
 
   // A small distance constraint so clicks (and the inline editors added later)
@@ -66,7 +66,12 @@ export default function BoardPage() {
       >
         <div className="flex h-full gap-4 overflow-x-auto p-4">
           {board.map((column) => (
-            <Column key={column.id} column={column} onAddCard={addCard} />
+            <Column
+              key={column.id}
+              column={column}
+              onAddCard={addCard}
+              onUpdateCard={updateCard}
+            />
           ))}
         </div>
         <DragOverlay>

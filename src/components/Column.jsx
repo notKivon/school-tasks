@@ -6,7 +6,7 @@ import { formatDisplayDate } from '../lib/dates.js'
 // One board column: title, its calculated due date in muted text (auto-date
 // columns only), the sorted card list, and an inline "Add task" input. Drag &
 // drop wiring is layered on in the next step.
-export default function Column({ column, onAddCard }) {
+export default function Column({ column, onAddCard, onUpdateCard }) {
   const isCustomDateColumn = column.id === 1 || column.id === 5
   const [adding, setAdding] = useState(false)
   const [title, setTitle] = useState('')
@@ -54,6 +54,7 @@ export default function Column({ column, onAddCard }) {
             key={card.id}
             card={card}
             isCustomDateColumn={isCustomDateColumn}
+            onUpdateCard={onUpdateCard}
           />
         ))}
       </div>

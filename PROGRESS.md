@@ -5,9 +5,9 @@
 **After finishing each step:** test it, update this file (tick the box, set Current/Next, add notes), then `git add -A && git commit` and push. A commit = a working, tested state. Never commit a half-finished step.
 
 ## Status
-- **Current step:** 5 — Custom due dates + title editing *(not started)*
-- **Next step:** 6 — Completion + dismissal UI
-- **Last good commit:** step 4 — core board (build + lint clean; **browser-verified** live, see step-4 notes)
+- **Current step:** 6 — Completion + dismissal UI *(not started)*
+- **Next step:** 7 — Realtime
+- **Last good commit:** step 5 — custom due dates + title editing (build + lint clean; **browser verification of 5–7 pending**, batched for the end of this session)
 - **Build healthy (`npm run build` passes):** ☑
 
 > 📌 **Follow-up for Kevin (not blocking):**
@@ -23,7 +23,7 @@
 - [x] **2. Lib modules** — `supabase.js`, `dates.js`, `labels.js`, `sorting.js` (see SPEC.md).
 - [x] **3. Auth** — `auth.jsx` (AuthContext/useAuth), `AuthProvider` in `main.jsx`, `LoginPage`, route guards, sticky header. Test sign-up / sign-in / sign-out against the live project. *(Verified live: sign-up 200 + instant session, sign-in 200, sign-out 204, re-sign-in 200.)*
 - [x] **4. Core board** — `useBoard.js` (no Realtime yet), `BoardPage`, `Column`, `Card`, @dnd-kit between-columns drag, add-task input.
-- [ ] **5. Custom due dates + title editing** — cols 1/5 date picker + clear; inline title edit with live label update.
+- [x] **5. Custom due dates + title editing** — cols 1/5 date picker + clear; inline title edit with live label update.
 - [ ] **6. Completion + dismissal UI** — checkbox, completed style, col-2 fade-out, "Show completed" toggle.
 - [ ] **7. Realtime** — add the `cards` subscription to `useBoard.js` (INSERT/UPDATE/DELETE, filtered to me, re-sort, cleanup).
 - [ ] **8. ICS Edge Function** — `index.ts`, `verify_jwt = false` in `config.toml`, deploy with `--no-verify-jwt`, Calendar header button + popover.
@@ -54,4 +54,9 @@
   - **Drag:** `DndContext` in `BoardPage` with a `PointerSensor` distance:6 activation constraint (so clicks still work for step-5 inline editors); `DraggableCard` wraps `Card` (`useDraggable`, whole card = handle); each `Column` card-area is a `useDroppable` with `id = column.id`; `DragOverlay` renders the moving copy in a portal so horizontal-scroll overflow doesn't clip it. Drop hands `over.id` (the numeric column id) to `moveCard`, which clears `due_date` for cols 2/3/4 and keeps it for 1/5; re-sort is automatic via the memo.
   - `position` is left null on insert — sorting is fully client-side, so the column is unused for ordering.
   - **Browser-verified (Playwright, live project) — PASS.** Created a fresh user, seeded two dated cards via REST (the step-5 date picker doesn't exist yet, so this is the only way to test a *non-null* custom date). Confirmed: 5 columns render in order with correct auto-dates (Today/Due = today even on a weekend; Next/Subsequent = next weekdays); add-task auto-detects the label (added "Spanish vocab quiz" → indigo Spanish chip + left border #6366f1); **drag clear** — "AP Chem Quiz" col1→col2 cleared due_date 2026-06-20 → null in the DB and dropped its per-card date badge; **drag keep** — "Physics reading" col5→col1 kept due_date 2026-06-25 in the DB and still shows the "Thu 25 Jun" badge. No console errors. Test cards deleted afterward; the test user remains for Kevin to delete (see Status box).
+- **Step 5:** Added optimistic `updateCard(cardId, patch)` to `useBoard` (same rollback pattern as `moveCard`); exported alongside `addCard`/`moveCard`. Threaded `onUpdateCard` through `BoardPage → Column → DraggableCard → Card`.
+  - **Title edit:** click the title `<p>` → controlled inline `<input>`; commit on blur, Enter blurs to commit, Escape sets a `cancelledRef` then blurs (so the blur-commit no-ops). Empty/unchanged titles don't write. The class chip + left border update live for free because `detectLabel(card.title)` runs at render and the label is never stored.
+  - **Date (cols 1/5 only):** the badge is now a button → opens an inline native `<input type="date">` (autofocus + `showPicker()` in an effect, wrapped in try/catch for browsers without it); commit on change, blur closes. A separate "×" clears to null. `commitDate('')` also maps to null.
+  - **dnd-kit vs. inline editors:** every editor (title input, date input, date/clear buttons) has `onPointerDown={(e) => e.stopPropagation()}` so the wrapping DraggableCard's drag listeners don't hijack typing or the picker. The existing PointerSensor `distance:6` constraint already lets a plain click through to open an editor. Removed the now-dead `dragHandleProps` param from `Card` (drag has always lived on the DraggableCard wrapper).
+  - Build + lint clean. **Browser verification batched to end of session (5–7 together).**
   - **Verify-harness notes (not app issues):** (1) the board is wider than a 1280px viewport (5×w-72 columns), so a drag onto the off-screen rightmost column silently no-ops in automation — widen the viewport (used 1680px) to drag across the whole board. (2) zsh has a reserved read-only integer `$UID`; don't name a shell var `UID` when scripting REST calls (assigning a uuid string to it throws "bad math expression"). Playwright was installed only for this test and uninstalled after; the working tree is unchanged.
