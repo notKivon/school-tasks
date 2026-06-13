@@ -7,7 +7,7 @@
 ## Status
 - **Current step:** 8 — ICS Edge Function *(not started)*
 - **Next step:** 9 — PWA
-- **Last good commit:** step 7 — Realtime (build + lint clean; **browser verification of 5–7 in progress** — see step-7 notes)
+- **Last good commit:** step 7 — Realtime (build + lint clean; **browser verification of 5–7 NOT done** — the live-user test approach was declined this session, so 5–7 are unverified in a real browser; see the follow-up box)
 - **Build healthy (`npm run build` passes):** ☑
 
 > 📌 **Follow-up for Kevin (not blocking):**
@@ -17,6 +17,15 @@
 > 2. **Before production, re-enable "Confirm email"** — I had you turn it off
 >    (`mailer_autoconfirm` is currently true) so I could auto-test the round-trip.
 >    For a real deployment you probably want email confirmation back ON.
+> 3. **Steps 5–7 are build+lint-clean but NOT browser-verified.** I started a
+>    live-browser smoke test (sign up a throwaway user → exercise title edit /
+>    date picker / completion fade / realtime) but the live signup was declined,
+>    so I stopped. Worth a manual pass (or tell me to retry the automated one)
+>    on: inline title edit + live label recolor, cols 1/5 date picker + clear,
+>    completion checkbox → col-2 fade-out vs other-column "keep visible",
+>    "Show completed" toggle, and realtime INSERT/UPDATE/DELETE.
+> 4. **Realtime DELETE filter** may need `cards` to have `REPLICA IDENTITY FULL`
+>    for the `user_id=eq` filter to match cron deletes — see step-7 notes.
 
 ## Steps
 - [x] **1. Project setup** — scaffold Vite + React (plain JS) into the current directory; Tailwind v4 via @tailwindcss/vite; install deps (@supabase/supabase-js, @dnd-kit/core + sortable + utilities, react-router-dom); write `.env.local` from the values in CLAUDE.md and confirm it's gitignored; create folders (components, pages, hooks, lib); placeholder page "School Tasks — coming soon"; confirm `npm run dev`. Then `git init`, initial commit, and push to GITHUB_REPO_URL.
