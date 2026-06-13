@@ -12,7 +12,11 @@ import { formatDisplayDate } from '../lib/dates.js'
 // the wrapping DraggableCard) don't hijack typing or the date picker.
 export default function Card({ card, isCustomDateColumn, onUpdateCard }) {
   const label = detectLabel(card.title)
-  const borderColor = label ? label.color : '#475569' // slate-600
+  const completed = !!card.completed_at
+  // Completed cards are muted: the class color drops to neutral gray and the
+  // title is struck through (the chip/border colour returns the moment it's
+  // unchecked, since the label is always re-derived from the title at render).
+  const borderColor = completed ? '#475569' : label ? label.color : '#475569' // slate-600
 
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleDraft, setTitleDraft] = useState(card.title)
@@ -72,19 +76,37 @@ export default function Card({ card, isCustomDateColumn, onUpdateCard }) {
     if (card.due_date !== null) onUpdateCard?.(card.id, { due_date: null })
   }
 
+  function toggleComplete(e) {
+    onUpdateCard?.(card.id, {
+      completed_at: e.target.checked ? new Date().toISOString() : null,
+    })
+  }
+
   return (
     <div
-      className="rounded-lg border-l-4 bg-slate-800 p-3 shadow-sm"
+      className={`rounded-lg border-l-4 bg-slate-800 p-3 shadow-sm ${completed ? 'opacity-70' : ''}`}
       style={{ borderLeftColor: borderColor }}
     >
-      {label && (
-        <span
-          className="mb-1.5 inline-block rounded px-1.5 py-0.5 text-[10px] font-medium text-white"
-          style={{ backgroundColor: label.color }}
-        >
-          {label.name}
-        </span>
-      )}
+      <div className="mb-1.5 flex items-start justify-between gap-2">
+        {label ? (
+          <span
+            className="inline-block rounded px-1.5 py-0.5 text-[10px] font-medium text-white"
+            style={{ backgroundColor: borderColor }}
+          >
+            {label.name}
+          </span>
+        ) : (
+          <span />
+        )}
+        <input
+          type="checkbox"
+          checked={completed}
+          onChange={toggleComplete}
+          onPointerDown={(e) => e.stopPropagation()}
+          aria-label={completed ? 'Mark incomplete' : 'Mark complete'}
+          className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-slate-400"
+        />
+      </div>
 
       {editingTitle ? (
         <input
@@ -99,7 +121,7 @@ export default function Card({ card, isCustomDateColumn, onUpdateCard }) {
       ) : (
         <p
           onClick={startTitleEdit}
-          className="cursor-text text-sm text-slate-100"
+          className={`cursor-text text-sm ${completed ? 'text-slate-500 line-through' : 'text-slate-100'}`}
         >
           {card.title}
         </p>

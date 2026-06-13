@@ -5,9 +5,9 @@
 **After finishing each step:** test it, update this file (tick the box, set Current/Next, add notes), then `git add -A && git commit` and push. A commit = a working, tested state. Never commit a half-finished step.
 
 ## Status
-- **Current step:** 6 — Completion + dismissal UI *(not started)*
-- **Next step:** 7 — Realtime
-- **Last good commit:** step 5 — custom due dates + title editing (build + lint clean; **browser verification of 5–7 pending**, batched for the end of this session)
+- **Current step:** 7 — Realtime *(not started)*
+- **Next step:** 8 — ICS Edge Function
+- **Last good commit:** step 6 — completion + dismissal UI (build + lint clean; **browser verification of 5–7 pending**, batched for the end of this session)
 - **Build healthy (`npm run build` passes):** ☑
 
 > 📌 **Follow-up for Kevin (not blocking):**
@@ -24,7 +24,7 @@
 - [x] **3. Auth** — `auth.jsx` (AuthContext/useAuth), `AuthProvider` in `main.jsx`, `LoginPage`, route guards, sticky header. Test sign-up / sign-in / sign-out against the live project. *(Verified live: sign-up 200 + instant session, sign-in 200, sign-out 204, re-sign-in 200.)*
 - [x] **4. Core board** — `useBoard.js` (no Realtime yet), `BoardPage`, `Column`, `Card`, @dnd-kit between-columns drag, add-task input.
 - [x] **5. Custom due dates + title editing** — cols 1/5 date picker + clear; inline title edit with live label update.
-- [ ] **6. Completion + dismissal UI** — checkbox, completed style, col-2 fade-out, "Show completed" toggle.
+- [x] **6. Completion + dismissal UI** — checkbox, completed style, col-2 fade-out, "Show completed" toggle.
 - [ ] **7. Realtime** — add the `cards` subscription to `useBoard.js` (INSERT/UPDATE/DELETE, filtered to me, re-sort, cleanup).
 - [ ] **8. ICS Edge Function** — `index.ts`, `verify_jwt = false` in `config.toml`, deploy with `--no-verify-jwt`, Calendar header button + popover.
 - [ ] **9. PWA** — vite-plugin-pwa, manifest, icons, workbox, install prompt, offline banner.
@@ -58,5 +58,10 @@
   - **Title edit:** click the title `<p>` → controlled inline `<input>`; commit on blur, Enter blurs to commit, Escape sets a `cancelledRef` then blurs (so the blur-commit no-ops). Empty/unchanged titles don't write. The class chip + left border update live for free because `detectLabel(card.title)` runs at render and the label is never stored.
   - **Date (cols 1/5 only):** the badge is now a button → opens an inline native `<input type="date">` (autofocus + `showPicker()` in an effect, wrapped in try/catch for browsers without it); commit on change, blur closes. A separate "×" clears to null. `commitDate('')` also maps to null.
   - **dnd-kit vs. inline editors:** every editor (title input, date input, date/clear buttons) has `onPointerDown={(e) => e.stopPropagation()}` so the wrapping DraggableCard's drag listeners don't hijack typing or the picker. The existing PointerSensor `distance:6` constraint already lets a plain click through to open an editor. Removed the now-dead `dragHandleProps` param from `Card` (drag has always lived on the DraggableCard wrapper).
+  - Build + lint clean. **Browser verification batched to end of session (5–7 together).**
+- **Step 6:** Completion via `onUpdateCard(id, { completed_at })` (optimistic; same rollback path). Checkbox top-right of each card (`onPointerDown` stop so dnd-kit ignores it). Completed style: card `opacity-70`, title `line-through text-slate-500`, label chip + left border drop to neutral gray (`#475569`) — colour returns on uncheck since the label is render-derived.
+  - **Layout/animation interpretation (documented deviation):** `Column` splits its sorted cards into `active` (no `completed_at`) on top and `completed` at the bottom, rendered in ONE keyed list (`[...active, ...completed]`) so a card moving between groups keeps its DOM node and the collapse transition can play. Each card is wrapped in a `Collapsible` using the grid `1fr→0fr` trick (700ms) — the spacing padding lives *inside* the collapsing region, so a hidden card leaves no gap (replaced the old `gap-2` with per-card `pb-2`).
+  - `showCompleted` is per-column state defaulting to `!isCol2`: **col 2 hides completed by default** (so checking a card there fades + slides it out, ~700ms), **all other columns show completed by default** in muted style ("keep it visible"). The "Show completed (N)" / "Hide completed" toggle (rendered whenever a column has ≥1 completed card) collapses/re-reveals that group — this is the "re-revealing faded col-2 cards" behaviour. *SPEC says the toggle is "hidden by default"; I read that as describing col 2 (the highlighted case) and made the toggle uniform across columns with a per-column default, rather than hiding completed cards in the non-col-2 columns where SPEC also says to keep them visible.*
+  - Cards aren't deleted on completion — they stay in the DB for the 02:15 `dismiss_completed_cards` cron; DELETE will surface via Realtime (step 7).
   - Build + lint clean. **Browser verification batched to end of session (5–7 together).**
   - **Verify-harness notes (not app issues):** (1) the board is wider than a 1280px viewport (5×w-72 columns), so a drag onto the off-screen rightmost column silently no-ops in automation — widen the viewport (used 1680px) to drag across the whole board. (2) zsh has a reserved read-only integer `$UID`; don't name a shell var `UID` when scripting REST calls (assigning a uuid string to it throws "bad math expression"). Playwright was installed only for this test and uninstalled after; the working tree is unchanged.
