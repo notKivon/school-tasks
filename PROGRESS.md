@@ -7,12 +7,13 @@
 ## Status
 - **Current step:** 5 — Custom due dates + title editing *(not started)*
 - **Next step:** 6 — Completion + dismissal UI
-- **Last good commit:** step 4 — core board (build + lint clean; live UI not yet browser-verified, see note)
+- **Last good commit:** step 4 — core board (build + lint clean; **browser-verified** live, see step-4 notes)
 - **Build healthy (`npm run build` passes):** ☑
 
 > 📌 **Follow-up for Kevin (not blocking):**
-> 1. ✅ ~~Delete two throwaway test users~~ — done by Kevin 2026-06-13. (I may
->    create new test users for verification as needed; Kevin deletes them after.)
+> 1. **Delete one new test user** from the step-4 browser smoke test:
+>    `claude-smoke-1781334775@example.com` (I can't delete users without the
+>    service-role key). Its cards were already cleaned up.
 > 2. **Before production, re-enable "Confirm email"** — I had you turn it off
 >    (`mailer_autoconfirm` is currently true) so I could auto-test the round-trip.
 >    For a real deployment you probably want email confirmation back ON.
@@ -51,5 +52,6 @@
 - **Step 4:** Built in two commits — (1) `useBoard` + `Column` + `Card` + add-task, (2) drag. `useBoard` owns a flat card list and derives the grouped/sorted board via `useMemo`; `addCard`/`moveCard` are optimistic with rollback. Card actions just mutate the flat list (Realtime in step 7 will reconcile).
   - **react-hooks lint gotcha:** the flat-recommended config now includes `react-hooks/set-state-in-effect`, which flags calling *any* setState-containing function from an effect — even after an `await`. Fix: the mount effect defines a local async `run()` with an `ignore` cancellation guard (the React-docs pattern); the pure fetch is `loadData` (no setState), shared with an exported `refetch` (for non-effect callers, e.g. Realtime). Don't reintroduce a `setLoading(true)` at the top of a function the effect calls.
   - **Drag:** `DndContext` in `BoardPage` with a `PointerSensor` distance:6 activation constraint (so clicks still work for step-5 inline editors); `DraggableCard` wraps `Card` (`useDraggable`, whole card = handle); each `Column` card-area is a `useDroppable` with `id = column.id`; `DragOverlay` renders the moving copy in a portal so horizontal-scroll overflow doesn't clip it. Drop hands `over.id` (the numeric column id) to `moveCard`, which clears `due_date` for cols 2/3/4 and keeps it for 1/5; re-sort is automatic via the memo.
-  - **Not browser-verified yet:** build + lint + dev-server module transforms are green, but I have no live session credentials here (the two test users' passwords aren't recorded), so I couldn't click through the board against real data. Worth a manual smoke test (add a card, drag between columns, confirm due-date clear/keep) when you next open it. Card checkbox/delete/title-edit/date-picker are deliberately deferred to steps 5/6.
   - `position` is left null on insert — sorting is fully client-side, so the column is unused for ordering.
+  - **Browser-verified (Playwright, live project) — PASS.** Created a fresh user, seeded two dated cards via REST (the step-5 date picker doesn't exist yet, so this is the only way to test a *non-null* custom date). Confirmed: 5 columns render in order with correct auto-dates (Today/Due = today even on a weekend; Next/Subsequent = next weekdays); add-task auto-detects the label (added "Spanish vocab quiz" → indigo Spanish chip + left border #6366f1); **drag clear** — "AP Chem Quiz" col1→col2 cleared due_date 2026-06-20 → null in the DB and dropped its per-card date badge; **drag keep** — "Physics reading" col5→col1 kept due_date 2026-06-25 in the DB and still shows the "Thu 25 Jun" badge. No console errors. Test cards deleted afterward; the test user remains for Kevin to delete (see Status box).
+  - **Verify-harness notes (not app issues):** (1) the board is wider than a 1280px viewport (5×w-72 columns), so a drag onto the off-screen rightmost column silently no-ops in automation — widen the viewport (used 1680px) to drag across the whole board. (2) zsh has a reserved read-only integer `$UID`; don't name a shell var `UID` when scripting REST calls (assigning a uuid string to it throws "bad math expression"). Playwright was installed only for this test and uninstalled after; the working tree is unchanged.
