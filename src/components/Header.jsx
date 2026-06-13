@@ -1,16 +1,18 @@
 import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../lib/auth.jsx'
 import { useToast } from '../lib/toast.jsx'
+import { passkeysSupported } from '../lib/supabase.js'
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 
 // Sticky top bar: app name, Calendar subscribe popover, the signed-in email,
 // and Sign Out.
 export default function Header() {
-  const { user, signOut } = useAuth()
+  const { user, signOut, registerPasskey } = useAuth()
   const toast = useToast()
   const [calOpen, setCalOpen] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [enrolling, setEnrolling] = useState(false)
   const popoverRef = useRef(null)
 
   const icsUrl = user
@@ -35,6 +37,23 @@ export default function Header() {
       document.removeEventListener('keydown', onKey)
     }
   }, [calOpen])
+
+  const addPasskey = async () => {
+    setEnrolling(true)
+    try {
+      const { error } = await registerPasskey()
+      if (error) throw error
+      toast.success('Passkey added — use it to sign in next time')
+    } catch (err) {
+      if (err.name === 'NotAllowedError' || err.name === 'AbortError') {
+        toast.info('Passkey setup cancelled')
+      } else {
+        toast.error(err.message || "Couldn't add passkey")
+      }
+    } finally {
+      setEnrolling(false)
+    }
+  }
 
   const copyLink = async () => {
     try {
@@ -107,6 +126,17 @@ export default function Header() {
             </div>
           )}
         </div>
+
+        {passkeysSupported && (
+          <button
+            type="button"
+            onClick={addPasskey}
+            disabled={enrolling}
+            className="rounded-md border border-slate-700 px-3 py-1.5 text-sm text-slate-200 transition-colors hover:bg-slate-800 disabled:opacity-60"
+          >
+            {enrolling ? 'Adding…' : 'Add passkey'}
+          </button>
+        )}
 
         <button
           type="button"

@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useAuth } from '../lib/auth.jsx'
+import { passkeysSupported } from '../lib/supabase.js'
 
 // Centered dark auth form with a Sign in / Sign up toggle.
 // On successful sign-in the session updates and the route guard sends us to
 // /board automatically; sign-up may require email confirmation.
 export default function LoginPage() {
-  const { signIn, signUp } = useAuth()
+  const { signIn, signUp, signInWithPasskey } = useAuth()
   const [mode, setMode] = useState('signin') // 'signin' | 'signup'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -34,6 +35,26 @@ export default function LoginPage() {
       }
     } catch (err) {
       setError(err.message || 'Something went wrong')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handlePasskey() {
+    setError(null)
+    setInfo(null)
+    setLoading(true)
+    try {
+      const { error } = await signInWithPasskey()
+      if (error) throw error
+      // On success the session updates and the route guard sends us to /board.
+    } catch (err) {
+      // The user dismissing the OS passkey prompt surfaces as an abort/NotAllowed.
+      if (err.name === 'NotAllowedError' || err.name === 'AbortError') {
+        setError('Passkey sign-in was cancelled.')
+      } else {
+        setError(err.message || 'Passkey sign-in failed')
+      }
     } finally {
       setLoading(false)
     }
@@ -101,6 +122,39 @@ export default function LoginPage() {
         >
           {loading ? 'Please wait…' : isSignup ? 'Sign Up' : 'Sign In'}
         </button>
+
+        {passkeysSupported && !isSignup && (
+          <>
+            <div className="my-4 flex items-center gap-3 text-xs text-slate-500">
+              <span className="h-px flex-1 bg-slate-800" />
+              or
+              <span className="h-px flex-1 bg-slate-800" />
+            </div>
+            <button
+              type="button"
+              onClick={handlePasskey}
+              disabled={loading}
+              className="flex w-full items-center justify-center gap-2 rounded-md border border-slate-700 px-3 py-2 text-sm font-medium text-slate-200 transition-colors hover:bg-slate-800 disabled:opacity-60"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="9" cy="8" r="4" />
+                <path d="M9 14c-3.3 0-6 1.8-6 4v2h8" />
+                <circle cx="17" cy="14" r="3" />
+                <path d="M17 17v4l1.5-1 1.5 1v-4" />
+              </svg>
+              Sign in with a passkey
+            </button>
+          </>
+        )}
 
         <button
           type="button"

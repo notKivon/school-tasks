@@ -9,4 +9,13 @@ if (!supabaseUrl || !supabaseAnonKey) {
   )
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  // Opt into the auth-js passkey (WebAuthn) methods. Without this flag,
+  // signInWithPasskey()/registerPasskey() throw at call time.
+  auth: { experimental: { passkey: true } },
+})
+
+// Passkeys need WebAuthn + a secure context (https or localhost). Used to
+// hide the passkey UI in browsers that can't do the ceremony.
+export const passkeysSupported =
+  typeof window !== 'undefined' && !!window.PublicKeyCredential

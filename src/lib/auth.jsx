@@ -29,6 +29,11 @@ export function AuthProvider({ children }) {
       supabase.auth.signInWithPassword({ email, password }),
     signUp: (email, password) => supabase.auth.signUp({ email, password }),
     signOut: () => supabase.auth.signOut(),
+    // Passwordless sign-in via a discoverable passkey (no email needed —
+    // the browser/OS picker chooses the account).
+    signInWithPasskey: () => supabase.auth.signInWithPasskey(),
+    // Enroll a passkey for the currently signed-in user (requires a session).
+    registerPasskey: () => supabase.auth.registerPasskey(),
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
