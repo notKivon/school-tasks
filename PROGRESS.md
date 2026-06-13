@@ -10,11 +10,9 @@
 - **Last good commit:** step 4 — core board (build + lint clean; live UI not yet browser-verified, see note)
 - **Build healthy (`npm run build` passes):** ☑
 
-> 📌 **Two follow-ups for Kevin (not blocking step 4):**
-> 1. **Delete two throwaway test users** I created while verifying auth (Supabase →
->    Authentication → Users): `claude-smoketest-1781333507@example.com` and
->    `claude-smoketest-1781333556@example.com`. (I can't delete users without the
->    service-role key, by design.)
+> 📌 **Follow-up for Kevin (not blocking):**
+> 1. ✅ ~~Delete two throwaway test users~~ — done by Kevin 2026-06-13. (I may
+>    create new test users for verification as needed; Kevin deletes them after.)
 > 2. **Before production, re-enable "Confirm email"** — I had you turn it off
 >    (`mailer_autoconfirm` is currently true) so I could auto-test the round-trip.
 >    For a real deployment you probably want email confirmation back ON.
