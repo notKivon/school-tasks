@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../lib/auth.jsx'
 import { useToast } from '../lib/toast.jsx'
-import { passkeysSupported } from '../lib/supabase.js'
+import { passkeysSupported, passkeyErrorMessage } from '../lib/supabase.js'
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 
@@ -45,11 +45,7 @@ export default function Header() {
       if (error) throw error
       toast.success('Passkey added — use it to sign in next time')
     } catch (err) {
-      if (err.name === 'NotAllowedError' || err.name === 'AbortError') {
-        toast.info('Passkey setup cancelled')
-      } else {
-        toast.error(err.message || "Couldn't add passkey")
-      }
+      toast.error(passkeyErrorMessage(err, 'Add passkey'))
     } finally {
       setEnrolling(false)
     }

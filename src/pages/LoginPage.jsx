@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '../lib/auth.jsx'
-import { passkeysSupported } from '../lib/supabase.js'
+import { passkeysSupported, passkeyErrorMessage } from '../lib/supabase.js'
 
 // Centered dark auth form with a Sign in / Sign up toggle.
 // On successful sign-in the session updates and the route guard sends us to
@@ -49,12 +49,7 @@ export default function LoginPage() {
       if (error) throw error
       // On success the session updates and the route guard sends us to /board.
     } catch (err) {
-      // The user dismissing the OS passkey prompt surfaces as an abort/NotAllowed.
-      if (err.name === 'NotAllowedError' || err.name === 'AbortError') {
-        setError('Passkey sign-in was cancelled.')
-      } else {
-        setError(err.message || 'Passkey sign-in failed')
-      }
+      setError(passkeyErrorMessage(err, 'Passkey sign-in'))
     } finally {
       setLoading(false)
     }
