@@ -4,14 +4,83 @@
 // `--no-verify-jwt` and `verify_jwt = false` in config.toml.
 //
 // GET /functions/v1/ics-feed?uid=<user.id>
-//   → text/calendar feed of that user's cards that have a due_date and are
-//     not completed. One VEVENT per card, all-day-ish reminder at 23:59 on
-//     the day BEFORE the due date.
+//   → text/calendar feed of that user's not-completed cards that have an
+//     effective due date. One VEVENT per card, all-day-ish reminder at 23:59
+//     on the day BEFORE the due date.
+//
+// Effective due date (mirrors src/lib/dates.js — keep in lockstep):
+//   • Auto-date columns 2/3/4 store due_date = null; the date is computed here
+//     (2 Today/Due → today HKT, 3 Next School Day, 4 Subsequent School Day).
+//   • Custom-date columns 1/5 use the stored due_date; null → no event.
 //
 // Reads SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY from Deno.env (auto-injected
 // by Supabase — never set these manually).
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+// --- School-day date logic (mirror of src/lib/dates.js) ---------------------
+// All dates are "YYYY-MM-DD" calendar strings. Day-of-week math uses UTC
+// getters on a UTC-midnight Date so there is no local-tz drift. "Today" is HKT
+// (UTC+8, no DST). School day = Mon–Fri; public holidays ignored.
+
+const HKT_OFFSET_MS = 8 * 60 * 60 * 1000
+
+function toDateString(d: Date): string {
+  const y = d.getUTCFullYear()
+  const m = String(d.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(d.getUTCDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+function parseDate(str: string): Date {
+  const [y, m, d] = str.split('-').map(Number)
+  return new Date(Date.UTC(y, m - 1, d))
+}
+
+function addDays(d: Date, n: number): Date {
+  return new Date(d.getTime() + n * 24 * 60 * 60 * 1000)
+}
+
+function isWeekday(d: Date): boolean {
+  const day = d.getUTCDay()
+  return day >= 1 && day <= 5
+}
+
+function getTodayHKT(): string {
+  return toDateString(new Date(Date.now() + HKT_OFFSET_MS))
+}
+
+function getNextSchoolDay(fromDate: string): string {
+  let d = parseDate(fromDate)
+  do {
+    d = addDays(d, 1)
+  } while (!isWeekday(d))
+  return toDateString(d)
+}
+
+function getSubsequentSchoolDay(fromDate: string): string {
+  return getNextSchoolDay(getNextSchoolDay(fromDate))
+}
+
+// Effective due date for a card: stored due_date if set, else the calculated
+// date for auto-date columns 2/3/4, else null (cols 1/5 with no date).
+function effectiveDueDate(
+  columnId: number,
+  dueDate: string | null,
+  today: string,
+): string | null {
+  if (dueDate) return dueDate
+  switch (columnId) {
+    case 2:
+      return today
+    case 3:
+      return getNextSchoolDay(today)
+    case 4:
+      return getSubsequentSchoolDay(today)
+    default:
+      return null
+  }
+}
 
 // RFC 5545 text escaping for SUMMARY / DESCRIPTION values.
 function escapeText(value: string): string {
@@ -74,11 +143,12 @@ Deno.serve(async (req) => {
     (columns ?? []).map((c) => [c.id, c.name]),
   )
 
+  // Auto-date columns (2/3/4) store a null due_date — their date is computed
+  // below — so we can't filter on due_date here. Filter only on completion.
   const { data: cards, error: cardErr } = await supabase
     .from('cards')
     .select('id, title, column_id, due_date')
     .eq('user_id', uid)
-    .not('due_date', 'is', null)
     .is('completed_at', null)
 
   if (cardErr) {
@@ -100,8 +170,12 @@ Deno.serve(async (req) => {
     'X-WR-CALNAME:School Tasks',
   ]
 
+  const today = getTodayHKT()
+
   for (const card of cards ?? []) {
-    const stamp = dayBeforeStamp(card.due_date)
+    const dueDate = effectiveDueDate(card.column_id, card.due_date, today)
+    if (!dueDate) continue // cols 1/5 with no date set → no event
+    const stamp = dayBeforeStamp(dueDate)
     lines.push('BEGIN:VEVENT')
     lines.push(`UID:${card.id}@school-tasks`)
     lines.push(`DTSTAMP:${dtstamp}`)
