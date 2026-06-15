@@ -5,8 +5,9 @@
 //
 // GET /functions/v1/ics-feed?uid=<user.id>
 //   → text/calendar feed of that user's not-completed cards that have an
-//     effective due date. One VEVENT per card, all-day-ish reminder at 23:59
-//     on the day BEFORE the due date.
+//     effective due date. One VEVENT per card, a reminder at 23:59 HKT on the
+//     day BEFORE the due date. Times carry TZID=Asia/Hong_Kong (+ a VTIMEZONE)
+//     so Google Calendar doesn't misread floating times as UTC and shift -8h.
 //
 // Effective due date (mirrors src/lib/dates.js — keep in lockstep):
 //   • Auto-date columns 2/3/4 store due_date = null; the date is computed here
@@ -168,6 +169,18 @@ Deno.serve(async (req) => {
     'X-PUBLISHED-TTL:PT1H',
     'NAME:School Tasks',
     'X-WR-CALNAME:School Tasks',
+    // Anchor all event times to HKT. Without a TZID, Google Calendar treats the
+    // floating local time as UTC and shifts every event by -8h. HKT is a fixed
+    // UTC+8 with no DST, so a single STANDARD component covers it.
+    'BEGIN:VTIMEZONE',
+    'TZID:Asia/Hong_Kong',
+    'BEGIN:STANDARD',
+    'DTSTART:19700101T000000',
+    'TZOFFSETFROM:+0800',
+    'TZOFFSETTO:+0800',
+    'TZNAME:HKT',
+    'END:STANDARD',
+    'END:VTIMEZONE',
   ]
 
   const today = getTodayHKT()
@@ -179,8 +192,8 @@ Deno.serve(async (req) => {
     lines.push('BEGIN:VEVENT')
     lines.push(`UID:${card.id}@school-tasks`)
     lines.push(`DTSTAMP:${dtstamp}`)
-    lines.push(`DTSTART:${stamp}T235900`)
-    lines.push(`DTEND:${stamp}T235900`)
+    lines.push(`DTSTART;TZID=Asia/Hong_Kong:${stamp}T235900`)
+    lines.push(`DTEND;TZID=Asia/Hong_Kong:${stamp}T235900`)
     lines.push(foldLine(`SUMMARY:${escapeText(card.title)}`))
     lines.push(
       foldLine(
