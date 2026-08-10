@@ -4,6 +4,8 @@
 //   6 Seng, 7 Seminar, 8 Spex, 9 AP Research, 10 unrecognised.
 // Cool colors: AI&ML, AP Calc BC, (reserved), AP Stats.
 // Warm colors: AP Gov, Seng, Seminar, Spex, AP Research.
+// Seminar and Spex deliberately share amber — they're told apart by the chip
+// text, not the color, so colors here are not unique per class.
 //
 // Slot 3 is an intentionally unnamed placeholder: it holds a priority position
 // and a color for a class to be named later. Entries with an empty name are
@@ -21,7 +23,7 @@ export const CLASSES = [
   { name: 'AP Gov', temp: 'warm', color: '#ef4444', aliases: ['Gov'] }, // red
   { name: 'Seng', temp: 'warm', color: '#f97316', aliases: [] }, // orange
   { name: 'Seminar', temp: 'warm', color: '#f59e0b', aliases: [] }, // amber
-  { name: 'Spex', temp: 'warm', color: '#f43f5e', aliases: [] }, // rose
+  { name: 'Spex', temp: 'warm', color: '#f59e0b', aliases: [] }, // amber — shared with Seminar
   { name: 'AP Research', temp: 'warm', color: '#ec4899', aliases: ['Research'] }, // pink
 ]
 
