@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../lib/auth.jsx'
 import { useToast } from '../lib/toast.jsx'
 import { passkeysSupported, passkeyErrorMessage } from '../lib/supabase.js'
+import ClassGuide from './ClassGuide.jsx'
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 
@@ -72,6 +73,8 @@ export default function Header() {
         <span className="hidden text-sm text-slate-400 sm:inline">
           {user?.email}
         </span>
+
+        <ClassGuide />
 
         <div className="relative" ref={popoverRef}>
           <button
