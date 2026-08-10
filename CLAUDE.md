@@ -30,15 +30,17 @@ This file loads every session. The full implementation breakdown is in **SPEC.md
 School day = Mon–Fri only; public holidays ignored.
 
 ### Class labels (auto-detected from the START of the title, case-insensitive)
-- Cool colors: AP Chem, Individual Pursuits, Spanish, Seminar
-- Warm colors: AP Lang, AP Econ, HPC, Physics
-- No label if the title doesn't start with a recognised class name.
+- Cool colors: AI&ML, AP Calc BC, AP Stats
+- Warm colors: AP Gov, Seng, Seminar, Spex, AP Research
+- Each class also accepts aliases (see `aliases` in `src/lib/labels.js`): AI&ML ← "AI & ML", "AI"; AP Calc BC ← "AP Calc", "Calc BC", "Calc"; AP Stats ← "Stats"; AP Gov ← "Gov"; AP Research ← "Research". The chip always shows the canonical name.
+- The match must end on a word boundary, so "AP Statistics" and "calculus" stay unlabelled.
+- No label if the title doesn't start with a recognised class name or alias.
 
 The label is derived from the title at render time — **never stored** — so editing a title updates the chip + border live. Labelled cards show a colored chip + a left border in the label color; unlabelled cards get a neutral gray border.
 
 ### Sorting (client-side; no manual reordering within a column)
 - Columns 1 & 5: by `due_date` ascending; nulls last.
-- Columns 2, 3, 4: by class priority, then `due_date` ascending within a class. Priority: 1 AP Chem, 2 Individual Pursuits, 3 Spanish, 4 Seminar, 5 AP Lang, 6 AP Econ, 7 HPC, 8 Physics, 9 unrecognised.
+- Columns 2, 3, 4: by class priority, then `due_date` ascending within a class. Priority: 1 AI&ML, 2 AP Calc BC, 3 (reserved, unnamed placeholder), 4 AP Stats, 5 AP Gov, 6 Seng, 7 Seminar, 8 Spex, 9 AP Research, 10 unrecognised.
 
 Drag & drop moves cards between columns only.
 
