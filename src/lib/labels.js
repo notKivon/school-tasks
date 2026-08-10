@@ -1,30 +1,64 @@
 // Class labels are derived from the title at render time and NEVER stored.
 // Order here is the canonical class priority order (CLAUDE.md):
-//   1 AI&ML, 2 AP Calc BC, 3 (reserved), 4 AP Stats, 5 AP Gov,
-//   6 Seng, 7 Seminar, 8 Spex, 9 AP Research, 10 unrecognised.
-// Cool colors: AI&ML, AP Calc BC, (reserved), AP Stats.
-// Warm colors: AP Gov, Seng, Seminar, Spex, AP Research.
-// Seminar and Spex deliberately share amber — they're told apart by the chip
+//   1 AI & Machine Learning, 2 AP Calculus BC, 3 (reserved), 4 AP Statistics,
+//   5 AP Government & Politics, 6 Senior English, 7 Seminar, 8 SPEX,
+//   9 AP Capstone Research, 10 unrecognised.
+// Cool colors: AI & Machine Learning, AP Calculus BC, (reserved), AP Statistics.
+// Warm colors: AP Government & Politics, Senior English, Seminar, SPEX,
+// AP Capstone Research.
+// Seminar and SPEX deliberately share amber — they're told apart by the chip
 // text, not the color, so colors here are not unique per class.
 //
 // Slot 3 is an intentionally unnamed placeholder: it holds a priority position
 // and a color for a class to be named later. Entries with an empty name are
 // skipped when matching, so it can never match a title until it's filled in.
 //
-// `aliases` are extra spellings that map to the same class — the AP-less form
-// ("Stats", "Gov"), short forms ("Calc", "AI"), and spacing variants. Matching
-// is case-insensitive throughout. The `name` is what renders on the chip.
+// `name` is the full display name — the only thing that renders on the chip.
+// `aliases` are the other spellings that trigger it: the short forms actually
+// typed ("Stats", "Calc", "AI", "Seng"), the AP-less long form ("Statistics",
+// "Capstone Research"), and spacing variants. Matching is case-insensitive
+// throughout, so a name only needs one casing here ("SPEX" catches "spex").
 
 export const CLASSES = [
-  { name: 'AI&ML', temp: 'cool', color: '#06b6d4', aliases: ['AI & ML', 'AI'] }, // cyan
-  { name: 'AP Calc BC', temp: 'cool', color: '#3b82f6', aliases: ['AP Calc', 'Calc BC', 'Calc'] }, // blue
+  {
+    name: 'AI & Machine Learning',
+    temp: 'cool',
+    color: '#06b6d4', // cyan
+    aliases: ['AI&ML', 'AI & ML', 'AI'],
+  },
+  {
+    name: 'AP Calculus BC',
+    temp: 'cool',
+    color: '#3b82f6', // blue
+    aliases: ['Calculus BC', 'AP Calc BC', 'AP Calc', 'Calc BC', 'Calc'],
+  },
   { name: '', temp: 'cool', color: '#6366f1', aliases: [] }, // indigo — reserved
-  { name: 'AP Stats', temp: 'cool', color: '#14b8a6', aliases: ['Stats'] }, // teal
-  { name: 'AP Gov', temp: 'warm', color: '#ef4444', aliases: ['Gov'] }, // red
-  { name: 'Seng', temp: 'warm', color: '#f97316', aliases: [] }, // orange
+  {
+    name: 'AP Statistics',
+    temp: 'cool',
+    color: '#14b8a6', // teal
+    aliases: ['Statistics', 'AP Stats', 'Stats'],
+  },
+  {
+    name: 'AP Government & Politics',
+    temp: 'warm',
+    color: '#ef4444', // red
+    aliases: ['Government & Politics', 'AP Gov', 'Gov'],
+  },
+  {
+    name: 'Senior English',
+    temp: 'warm',
+    color: '#f97316', // orange
+    aliases: ['Seng'],
+  },
   { name: 'Seminar', temp: 'warm', color: '#f59e0b', aliases: [] }, // amber
-  { name: 'Spex', temp: 'warm', color: '#f59e0b', aliases: [] }, // amber — shared with Seminar
-  { name: 'AP Research', temp: 'warm', color: '#ec4899', aliases: ['Research'] }, // pink
+  { name: 'SPEX', temp: 'warm', color: '#f59e0b', aliases: [] }, // amber — shared with Seminar
+  {
+    name: 'AP Capstone Research',
+    temp: 'warm',
+    color: '#ec4899', // pink
+    aliases: ['Capstone Research', 'AP Research', 'Research'],
+  },
 ]
 
 // Ordered list of class names = priority order.
@@ -41,13 +75,24 @@ const MATCHERS = CLASSES.map((cls) => ({
     .sort((a, b) => b.length - a.length),
 }))
 
+// Escape hatch: a title starting with a backslash is force-unlabelled, so
+// "\Calc trick" gets no chip and renders as "Calc trick". Use it when a task
+// genuinely starts with a class word but isn't for that class. The backslash is
+// part of the stored title (and so is visible when editing) but never displayed
+// on the card. Escaped cards sort as unrecognised, i.e. last within a column.
+export const LABEL_ESCAPE = '\\'
+
+export function isEscaped(title) {
+  return !!title && title.trimStart().startsWith(LABEL_ESCAPE)
+}
+
 // Match a class against the START of the title (case-insensitive), returning
 // both the class and how many characters it matched — callers need the length
 // because an alias ("Calc") is rarely the same length as the name ("AP Calc
 // BC"). The match must end on a word boundary, so "AP Statistics" isn't tagged
 // as "AP Stats" and "aircraft" isn't tagged as "AI". Null if nothing matches.
 export function matchClass(title) {
-  if (!title) return null
+  if (!title || isEscaped(title)) return null
   const lower = title.trimStart().toLowerCase()
   for (const { cls, forms } of MATCHERS) {
     for (const form of forms) {
@@ -72,8 +117,13 @@ export function detectLabel(title) {
 // stored, sorted on, and edited — this only affects the read-only card text.
 // After the class name we also eat a leading separator (":", "-", "–", "—", "&")
 // and surrounding spaces. If stripping would leave nothing (the title is *only*
-// a class name), keep the full title so the card never renders blank.
+// a class name), keep the full title so the card never renders blank. An
+// escaped title drops its backslash here and is otherwise shown verbatim.
 export function getDisplayTitle(title) {
+  if (isEscaped(title)) {
+    const rest = title.trimStart().slice(LABEL_ESCAPE.length).trimStart()
+    return rest || title
+  }
   const match = matchClass(title)
   if (!match) return title
   const rest = title

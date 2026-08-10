@@ -30,10 +30,12 @@ This file loads every session. The full implementation breakdown is in **SPEC.md
 School day = Mon–Fri only; public holidays ignored.
 
 ### Class labels (auto-detected from the START of the title, case-insensitive)
-- Cool colors: AI&ML, AP Calc BC, AP Stats
-- Warm colors: AP Gov, Seng, Seminar, Spex, AP Research
-- Each class also accepts aliases (see `aliases` in `src/lib/labels.js`): AI&ML ← "AI & ML", "AI"; AP Calc BC ← "AP Calc", "Calc BC", "Calc"; AP Stats ← "Stats"; AP Gov ← "Gov"; AP Research ← "Research". The chip always shows the canonical name.
-- The match must end on a word boundary, so "AP Statistics" and "calculus" stay unlabelled.
+- Cool colors: AI & Machine Learning, AP Calculus BC, AP Statistics
+- Warm colors: AP Government & Politics, Senior English, Seminar, SPEX, AP Capstone Research
+- Seminar and SPEX intentionally share amber — colors are **not** unique per class.
+- `name` is the full display name shown on the chip; `aliases` are the other spellings that trigger it (see `src/lib/labels.js`): AI & Machine Learning ← "AI&ML", "AI & ML", "AI"; AP Calculus BC ← "Calculus BC", "AP Calc BC", "AP Calc", "Calc BC", "Calc"; AP Statistics ← "Statistics", "AP Stats", "Stats"; AP Government & Politics ← "Government & Politics", "AP Gov", "Gov"; Senior English ← "Seng"; AP Capstone Research ← "Capstone Research", "AP Research", "Research".
+- The match must end on a word boundary, so "AP Statistician" and "calculus problem" stay unlabelled.
+- **Force-unlabel:** a leading backslash (`\Calc trick`) suppresses the label; the backslash is stored but never displayed, and the card sorts as unrecognised.
 - No label if the title doesn't start with a recognised class name or alias.
 
 The label is derived from the title at render time — **never stored** — so editing a title updates the chip + border live. Labelled cards show a colored chip + a left border in the label color; unlabelled cards get a neutral gray border.
