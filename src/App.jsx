@@ -7,8 +7,8 @@ import InstallPrompt from './components/InstallPrompt.jsx'
 
 function FullScreenLoader() {
   return (
-    <div className="flex min-h-screen items-center justify-center text-slate-500">
-      Loading…
+    <div className="boot" role="status" aria-label="Loading">
+      <span className="brand-mark" />
     </div>
   )
 }

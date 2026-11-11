@@ -62,6 +62,7 @@
 @import "./styles/base.css";
 @import "./styles/components.css";
 @import "./styles/header.css";
+@import "./styles/auth.css";
 
 /* ---------- Raw tokens (template names) ---------- */
 :root {

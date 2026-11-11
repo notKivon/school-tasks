@@ -1,8 +1,11 @@
 import { useState } from 'react'
 import { useAuth } from '../lib/auth.jsx'
 import { passkeysSupported, passkeyErrorMessage } from '../lib/supabase.js'
+import Icon from '../components/Icon.jsx'
+import AuthMessage from '../components/AuthMessage.jsx'
+import AuthModeToggle from '../components/AuthModeToggle.jsx'
 
-// Centered dark auth form with a Sign in / Sign up toggle.
+// Centered auth card with a Sign in / Sign up toggle.
 // On successful sign-in the session updates and the route guard sends us to
 // /board automatically; sign-up may require email confirmation.
 export default function LoginPage() {
@@ -13,13 +16,19 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [info, setInfo] = useState(null)
+  const [badPassword, setBadPassword] = useState(false) // outline the field
 
   const isSignup = mode === 'signup'
 
-  async function handleSubmit(e) {
-    e.preventDefault()
+  function clearMessages() {
     setError(null)
     setInfo(null)
+    setBadPassword(false)
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    clearMessages()
     setLoading(true)
     try {
       if (isSignup) {
@@ -35,14 +44,14 @@ export default function LoginPage() {
       }
     } catch (err) {
       setError(err.message || 'Something went wrong')
+      setBadPassword(true)
     } finally {
       setLoading(false)
     }
   }
 
   async function handlePasskey() {
-    setError(null)
-    setInfo(null)
+    clearMessages()
     setLoading(true)
     try {
       const { error } = await signInWithPasskey()
@@ -55,112 +64,76 @@ export default function LoginPage() {
     }
   }
 
-  function toggleMode() {
-    setMode(isSignup ? 'signin' : 'signup')
-    setError(null)
-    setInfo(null)
+  function changeMode(next) {
+    if (next === mode) return
+    setMode(next)
+    clearMessages()
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-sm rounded-xl border border-slate-800 bg-slate-900 p-6 shadow-xl"
-      >
-        <h1 className="mb-1 text-lg font-semibold text-slate-100">
-          School Tasks
-        </h1>
-        <p className="mb-5 text-sm text-slate-400">
-          {isSignup ? 'Create your account' : 'Sign in to your account'}
-        </p>
+    <div className="login">
+      <div className="auth">
+        <div className="auth-brand">
+          <span className="brand-mark" />
+          <h1>School Tasks</h1>
+        </div>
+        <form onSubmit={handleSubmit} className="auth-card">
+          <AuthModeToggle mode={mode} onChange={changeMode} />
 
-        <label className="mb-1 block text-xs font-medium text-slate-400">
-          Email
-        </label>
-        <input
-          type="email"
-          required
-          autoComplete="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="mb-4 w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-slate-500"
-        />
+          <label className="field">
+            <span>Email</span>
+            <input
+              type="email"
+              required
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="input"
+            />
+          </label>
 
-        <label className="mb-1 block text-xs font-medium text-slate-400">
-          Password
-        </label>
-        <input
-          type="password"
-          required
-          minLength={6}
-          autoComplete={isSignup ? 'new-password' : 'current-password'}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="mb-4 w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-slate-500"
-        />
+          <label className={`field${badPassword ? ' is-invalid' : ''}`}>
+            <span>Password</span>
+            <input
+              type="password"
+              required
+              minLength={6}
+              autoComplete={isSignup ? 'new-password' : 'current-password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              aria-invalid={badPassword || undefined}
+              className="input"
+            />
+            {isSignup && (
+              <small className="field-hint">At least 6 characters</small>
+            )}
+          </label>
 
-        {error && (
-          <p className="mb-3 rounded-md bg-red-500/10 px-3 py-2 text-sm text-red-400">
-            {error}
-          </p>
-        )}
-        {info && (
-          <p className="mb-3 rounded-md bg-emerald-500/10 px-3 py-2 text-sm text-emerald-400">
-            {info}
-          </p>
-        )}
+          {error && <AuthMessage kind="error">{error}</AuthMessage>}
+          {info && <AuthMessage kind="info">{info}</AuthMessage>}
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-500 disabled:opacity-60"
-        >
-          {loading ? 'Please wait…' : isSignup ? 'Sign Up' : 'Sign In'}
-        </button>
+          <button type="submit" disabled={loading} className="btn btn-primary">
+            {isSignup
+              ? loading ? 'Creating account…' : 'Create account'
+              : loading ? 'Signing in…' : 'Sign in'}
+          </button>
 
-        {passkeysSupported && !isSignup && (
-          <>
-            <div className="my-4 flex items-center gap-3 text-xs text-slate-500">
-              <span className="h-px flex-1 bg-slate-800" />
-              or
-              <span className="h-px flex-1 bg-slate-800" />
-            </div>
-            <button
-              type="button"
-              onClick={handlePasskey}
-              disabled={loading}
-              className="flex w-full items-center justify-center gap-2 rounded-md border border-slate-700 px-3 py-2 text-sm font-medium text-slate-200 transition-colors hover:bg-slate-800 disabled:opacity-60"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                className="h-4 w-4"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
+          {passkeysSupported && !isSignup && (
+            <>
+              <div className="or">or</div>
+              <button
+                type="button"
+                onClick={handlePasskey}
+                disabled={loading}
+                className="btn btn-secondary"
               >
-                <circle cx="9" cy="8" r="4" />
-                <path d="M9 14c-3.3 0-6 1.8-6 4v2h8" />
-                <circle cx="17" cy="14" r="3" />
-                <path d="M17 17v4l1.5-1 1.5 1v-4" />
-              </svg>
-              Sign in with a passkey
-            </button>
-          </>
-        )}
-
-        <button
-          type="button"
-          onClick={toggleMode}
-          className="mt-4 w-full text-center text-sm text-slate-400 hover:text-slate-200"
-        >
-          {isSignup
-            ? 'Already have an account? Sign in'
-            : "Don't have an account? Sign up"}
-        </button>
-      </form>
+                <Icon name="key" />
+                Sign in with a passkey
+              </button>
+            </>
+          )}
+        </form>
+      </div>
     </div>
   )
 }

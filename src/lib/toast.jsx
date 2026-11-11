@@ -2,15 +2,14 @@
    are intentionally co-located in this module (same pattern as auth.jsx). */
 import { createContext, useCallback, useContext, useMemo, useState } from 'react'
 
+import Icon from '../components/Icon.jsx'
+
 const ToastContext = createContext(null)
 
 let nextId = 0
 
-const STYLES = {
-  success: 'border-emerald-700 bg-emerald-950/90 text-emerald-100',
-  error: 'border-red-700 bg-red-950/90 text-red-100',
-  info: 'border-slate-600 bg-slate-800/95 text-slate-100',
-}
+// Status glyph per toast type (styles: .toast in src/styles/auth.css).
+const ICONS = { success: 'check', error: 'x', info: 'info' }
 
 // Minimal toast system (no library): a bottom-right stack of auto-dismissing
 // messages. `useToast()` returns { success, error, info }, each auto-dismissing
@@ -43,16 +42,30 @@ export function ToastProvider({ children }) {
   return (
     <ToastContext.Provider value={toast}>
       {children}
-      <div className="pointer-events-none fixed bottom-4 right-4 z-40 flex flex-col gap-2">
+      <div className="toasts">
         {toasts.map((t) => (
-          <button
+          <div
             key={t.id}
-            type="button"
+            role={t.type === 'error' ? 'alert' : 'status'}
             onClick={() => dismiss(t.id)}
-            className={`pointer-events-auto max-w-xs rounded-lg border px-3 py-2 text-left text-sm shadow-xl ${STYLES[t.type]}`}
+            className={`toast toast--${t.type}`}
           >
-            {t.message}
-          </button>
+            <span className="toast-ico">
+              <Icon name={ICONS[t.type]} />
+            </span>
+            <span>{t.message}</span>
+            <button
+              type="button"
+              aria-label="Dismiss"
+              className="toast-x"
+              onClick={(e) => {
+                e.stopPropagation()
+                dismiss(t.id)
+              }}
+            >
+              <Icon name="x" />
+            </button>
+          </div>
         ))}
       </div>
     </ToastContext.Provider>

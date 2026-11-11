@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import Icon from './Icon.jsx'
 
 const DISMISS_KEY = 'school-tasks-install-dismissed'
 
@@ -32,22 +33,23 @@ export default function InstallPrompt() {
   }
 
   return (
-    <div className="fixed bottom-4 left-4 z-30 flex items-center gap-3 rounded-lg border border-slate-700 bg-slate-900 px-4 py-2.5 text-sm shadow-xl">
-      <span className="text-slate-200">Install School Tasks?</span>
-      <button
-        type="button"
-        onClick={install}
-        className="rounded-md bg-cyan-600 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-cyan-500"
-      >
-        Install App
-      </button>
-      <button
-        type="button"
-        onClick={dismiss}
-        className="rounded-md px-2 py-1 text-xs text-slate-400 transition-colors hover:text-slate-200"
-      >
-        Not now
-      </button>
+    <div className="install" role="dialog" aria-label="Install School Tasks">
+      <span className="install-ico">
+        <span className="brand-mark" />
+      </span>
+      <div>
+        <strong>Install School Tasks</strong>
+        <small>Opens in its own window and works offline</small>
+      </div>
+      <div className="install-actions">
+        <button type="button" onClick={install} className="btn btn-primary btn-sm">
+          <Icon name="down" />
+          Install App
+        </button>
+        <button type="button" onClick={dismiss} className="btn btn-quiet btn-sm">
+          Not now
+        </button>
+      </div>
     </div>
   )
 }
