@@ -1,20 +1,30 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useDroppable } from '@dnd-kit/core'
 import DraggableCard from './DraggableCard.jsx'
+import AddTask from './AddTask.jsx'
+import {
+  CardSlot,
+  CompletedToggle,
+  DropHint,
+  EmptyColumn,
+} from './ColumnParts.jsx'
 import { formatDisplayDate } from '../lib/dates.js'
 
-// One board column: title, its calculated due date in muted text (auto-date
-// columns only), the sorted card list, and an inline "Add task" input.
+// One board column: display-font title, active-card count, its calculated due
+// date (auto-date columns only), the sorted card list scrolling inside the
+// column, the completed toggle and "Add task". Today / Due (col 2) is lifted
+// with the paper edge, accent title and the ribbon.
 //
 // Completion: active cards sit on top (domain-sorted), completed cards collect
-// at the bottom. Column 2 ("Today / Due") is the active-work column — a card
-// completed there fades + slides out of view (the 02:15 cron later removes it
-// from the DB); every other column keeps completed cards visible in the muted
-// completed style. A per-column "Show completed" toggle (col 2 starts hidden,
-// the rest start shown) collapses/re-reveals that completed group.
+// at the bottom. Column 2 is the active-work column — a card completed there
+// fades + slides out of view (the 02:15 cron later removes it from the DB);
+// every other column keeps completed cards visible in the muted completed
+// style. A per-column "Show completed" toggle (col 2 starts hidden, the rest
+// start shown) collapses/re-reveals that completed group.
 export default function Column({
   column,
   today,
+  activeCard,
   onAddCard,
   onUpdateCard,
   onDeleteCard,
@@ -23,7 +33,6 @@ export default function Column({
   const isCustomDateColumn = column.id === 1 || column.id === 5
   const isCol2 = column.id === 2
   const [adding, setAdding] = useState(false)
-  const [title, setTitle] = useState('')
   const [showCompleted, setShowCompleted] = useState(!isCol2)
   const inputRef = useRef(null)
 
@@ -42,9 +51,11 @@ export default function Column({
       addOpenerRef.current = null
     }
   }, [addOpenerRef, openAdd])
+
   // Drop target = the whole column (id = the column's numeric id, matching the
-  // value moveCard expects). Highlights while a card hovers over it.
-  const { setNodeRef, isOver } = useDroppable({ id: column.id })
+  // value moveCard expects). It only lights up for a card from another column.
+  const { setNodeRef, isOver, active: dragging } = useDroppable({ id: column.id })
+  const isTarget = isOver && dragging?.data.current?.columnId !== column.id
 
   const active = column.cards.filter((c) => !c.completed_at)
   const completed = column.cards.filter((c) => c.completed_at)
@@ -52,53 +63,34 @@ export default function Column({
   // and completed groups keeps its DOM node — letting the collapse transition
   // play (the col-2 fade-out) instead of snapping.
   const ordered = [...active, ...completed]
+  const showEmpty =
+    !isTarget && active.length === 0 && (completed.length === 0 || !showCompleted)
 
-  // keepOpen (Enter with text) leaves the input open + focused so the next card
-  // can be typed straight away; a plain blur (keepOpen false) closes it.
-  async function commit({ keepOpen = false } = {}) {
-    const trimmed = title.trim()
-    setTitle('')
-    if (keepOpen) {
-      requestAnimationFrame(() => inputRef.current?.focus())
-    } else {
-      setAdding(false)
-    }
-    if (trimmed) await onAddCard(column.id, trimmed)
-  }
-
-  function handleKeyDown(e) {
-    if (e.key === 'Enter') {
-      e.preventDefault()
-      // Enter on an empty input means "done" → close; otherwise add + stay open.
-      commit({ keepOpen: title.trim().length > 0 })
-    } else if (e.key === 'Escape') {
-      setAdding(false)
-      setTitle('')
-    }
-  }
+  const classes = ['col', isCol2 && 'col--today', isTarget && 'col--over']
+    .filter(Boolean)
+    .join(' ')
 
   return (
-    <section className="flex w-72 shrink-0 flex-col rounded-xl bg-slate-900/60 p-3">
-      <header className="mb-3 px-1">
-        <h2 className="text-sm font-semibold text-slate-100">{column.name}</h2>
-        {!isCustomDateColumn && column.dueDate && (
-          <p className="text-xs text-slate-500">
-            {formatDisplayDate(column.dueDate)}
-          </p>
-        )}
+    <section ref={setNodeRef} className={classes} aria-label={column.name}>
+      {isCol2 && <span className="ribbon" aria-hidden="true" />}
+      <header className="col-head">
+        <div>
+          <h2 className="col-title">{column.name}</h2>
+          {!isCustomDateColumn && column.dueDate && (
+            <p className="col-date">{formatDisplayDate(column.dueDate)}</p>
+          )}
+        </div>
+        <span
+          className={`col-count ${active.length === 0 ? 'is-zero' : ''}`}
+          aria-label={`${active.length} active ${active.length === 1 ? 'task' : 'tasks'}`}
+        >
+          {active.length}
+        </span>
       </header>
 
-      <div
-        ref={setNodeRef}
-        className={`flex min-h-24 flex-1 flex-col rounded-lg transition-colors ${
-          isOver ? 'bg-slate-800/40 outline outline-1 outline-slate-600' : ''
-        }`}
-      >
+      <div className="col-list">
         {ordered.map((card) => (
-          <Collapsible
-            key={card.id}
-            collapsed={!!card.completed_at && !showCompleted}
-          >
+          <CardSlot key={card.id} collapsed={!!card.completed_at && !showCompleted}>
             <DraggableCard
               card={card}
               today={today}
@@ -107,61 +99,27 @@ export default function Column({
               onDeleteCard={onDeleteCard}
               onRequestNewCard={openAdd}
             />
-          </Collapsible>
+          </CardSlot>
         ))}
+        {showEmpty && <EmptyColumn column={column} />}
+        {isTarget && <DropHint column={column} card={activeCard} />}
       </div>
 
       {completed.length > 0 && (
-        <button
-          type="button"
-          onClick={() => setShowCompleted((v) => !v)}
-          className="mt-2 rounded-md px-2 py-1 text-left text-xs text-slate-500 transition-colors hover:bg-slate-800 hover:text-slate-300"
-        >
-          {showCompleted
-            ? 'Hide completed'
-            : `Show completed (${completed.length})`}
-        </button>
-      )}
-
-      {adding ? (
-        <input
-          ref={inputRef}
-          autoFocus
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          onKeyDown={handleKeyDown}
-          onBlur={() => commit()}
-          placeholder="Task title…"
-          className="mt-2 w-full rounded-md border border-slate-700 bg-slate-800 px-2 py-1.5 text-sm text-slate-100 outline-none focus:border-slate-500"
+        <CompletedToggle
+          open={showCompleted}
+          count={completed.length}
+          onToggle={() => setShowCompleted((v) => !v)}
         />
-      ) : (
-        <button
-          type="button"
-          onClick={() => setAdding(true)}
-          className="mt-2 rounded-md px-2 py-1.5 text-left text-sm text-slate-500 transition-colors hover:bg-slate-800 hover:text-slate-300"
-        >
-          + Add task
-        </button>
       )}
-    </section>
-  )
-}
 
-// Smooth height+fade collapse via the grid 1fr→0fr trick (the spacing padding
-// lives inside the collapsing region, so a hidden card leaves no gap). The
-// ~700ms transition is the col-2 "fade + slide out of view" on completion.
-function Collapsible({ collapsed, children }) {
-  return (
-    <div
-      className="grid transition-all duration-700 ease-in-out"
-      style={{
-        gridTemplateRows: collapsed ? '0fr' : '1fr',
-        opacity: collapsed ? 0 : 1,
-      }}
-    >
-      <div className="min-h-0 overflow-hidden">
-        <div className="pb-2">{children}</div>
-      </div>
-    </div>
+      <AddTask
+        open={adding}
+        onOpen={openAdd}
+        onClose={() => setAdding(false)}
+        inputRef={inputRef}
+        onAdd={(title) => onAddCard(column.id, title)}
+      />
+    </section>
   )
 }

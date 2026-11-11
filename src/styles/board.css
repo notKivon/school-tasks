@@ -1,0 +1,227 @@
+/* Board screen: shell, columns, cards, drag states, skeleton, phone layout.
+   Ported from design/template.html (.board .col* .card* .check .due* .tabs).
+   Uses the tokens in src/index.css and the shared .chip/.badge-overdue/.sk*. */
+@layer components {
+  /* ---------- Shell: five full-height columns, lists scroll inside ---------- */
+  .board {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(var(--column-width), 1fr));
+    gap: var(--space-3); padding: var(--space-5);
+    height: 100%; overflow-x: auto; align-items: stretch;
+  }
+
+  /* ---------- Column ---------- */
+  .col {
+    position: relative; display: flex; flex-direction: column; min-height: 0;
+    padding: 14px var(--space-2) var(--space-2);
+    background: var(--surface-column);
+    border: 1px solid var(--line-1); border-radius: var(--radius-column);
+    transition: background var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out);
+  }
+  .col--today {
+    background: var(--surface-today); border-color: var(--line-today);
+    --surface-card: var(--surface-today-card);
+    --surface-card-hover: var(--surface-today-card-hover);
+  }
+  .col--today .col-title { color: var(--accent); font-weight: var(--weight-semibold); }
+  .col--today .col-date { color: var(--text-1); }
+  .ribbon {
+    position: absolute; top: -1px; right: 16px; width: 12px; height: 28px;
+    background: var(--accent);
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 76%, 0 100%);
+  }
+  .col--over { background: color-mix(in oklab, var(--accent) 5%, var(--surface-column)); border: 1px dashed var(--accent-line); }
+  .col--today.col--over { background: color-mix(in oklab, var(--accent) 5%, var(--surface-today)); }
+  .col-head { flex: none; display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; min-height: 52px; padding: 0 6px 10px; }
+  .col--today .col-head { padding-right: 42px; }  /* count clears the ribbon */
+  .col-title { font-family: var(--font-display); font-size: var(--text-lg); font-weight: 500; line-height: var(--leading-tight); letter-spacing: -0.005em; }
+  .col-date { margin-top: 3px; color: var(--text-2); font-size: var(--text-sm); }
+  .col-count {
+    flex: none; min-width: 24px; height: 22px; padding: 0 7px; margin-top: 1px;
+    display: inline-grid; place-items: center; border-radius: var(--radius-pill);
+    background: rgb(241 233 218 / 0.07); color: var(--text-2);
+    font-size: var(--text-sm); font-weight: var(--weight-semibold); font-variant-numeric: tabular-nums;
+  }
+  .col-count.is-zero { background: transparent; box-shadow: inset 0 0 0 1px var(--line-2); color: var(--text-3); }
+
+  /* The list scrolls inside the column. Each card sits in a collapsing wrapper
+     whose 4px padding is the room for focus rings + the card shadow (the
+     template's margin -4px / padding 4px), and 4 + 4 = the 8px card gap.
+     Only vertical overscroll is contained, so a sideways swipe that starts on
+     a card still chains to the board and moves between columns on phones. */
+  .col-list {
+    position: relative; flex: 0 1 auto; min-height: 0; margin: -4px;
+    display: flex; flex-direction: column;
+    overflow-x: hidden; overflow-y: auto; overscroll-behavior-y: contain;
+  }
+  .col-list > * { flex: none; }
+  .card-slot {
+    display: grid; grid-template-rows: 1fr; opacity: 1;
+    transition: grid-template-rows var(--dur-slow) var(--ease-in-out), opacity var(--dur-slow) var(--ease-in-out);
+  }
+  .card-slot.is-collapsed { grid-template-rows: 0fr; opacity: 0; }
+  .card-slot > div { min-height: 0; overflow: hidden; }
+  .card-slot > div > div { padding: 4px; }
+
+  .empty { display: grid; place-items: center; min-height: 150px; margin: 4px; padding: 16px; border: 1px dashed var(--line-1); border-radius: var(--radius-card); text-align: center; }
+  .empty p { color: var(--text-2); font-size: var(--text-base); }
+  .empty p + p { margin-top: 2px; color: var(--text-3); font-size: var(--text-sm); }
+  .drop-hint { display: flex; gap: 8px; align-items: flex-start; margin: 4px; padding: 10px 12px; border-radius: var(--radius-card); background: var(--accent-soft); color: var(--text-2); font-size: var(--text-sm); line-height: 1.45; }
+  .drop-hint .i { width: 14px; height: 14px; margin-top: 2px; color: var(--accent); }
+
+  /* Column footer controls */
+  .toggle-done { flex: none; align-self: flex-start; display: flex; align-items: center; gap: 6px; margin: 10px 4px 0; padding: 4px 6px; border-radius: 6px; color: var(--text-3); font-size: var(--text-sm); font-weight: var(--weight-medium); }
+  .toggle-done:hover { color: var(--text-1); background: var(--accent-soft); }
+  .toggle-done .i { width: 13px; height: 13px; transition: transform var(--dur-base) var(--ease-out); }
+  .toggle-done.is-open .i { transform: rotate(90deg); }
+  .add-btn { flex: none; display: flex; align-items: center; gap: 8px; width: 100%; margin-top: 6px; padding: 8px 10px; border-radius: var(--radius-control); color: var(--text-3); font-size: var(--text-base); text-align: left; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
+  .add-btn:hover { color: var(--text-1); background: var(--accent-soft); }
+  .add-btn .i { width: 15px; height: 15px; }
+  .add-field { flex: none; margin-top: 8px; }
+  .add-input { width: 100%; height: 38px; padding: 0 11px; background: var(--surface-sunken); border: 1px solid var(--accent-line); border-radius: var(--radius-control); color: var(--text-1); font-size: var(--text-base); outline: none; box-shadow: 0 0 0 3px rgb(241 233 218 / 0.07); }
+
+  /* ---------- Card ----------
+     Row 1: chips from the left padding; trash at the row's right end.
+     Row 2: checkbox + title. Row 3: due-date badge (columns 1 and 5). */
+  .card-drag { border-radius: var(--radius-card); touch-action: manipulation; }
+  .card {
+    position: relative;
+    display: grid; grid-template-columns: 18px minmax(0, 1fr); column-gap: 10px;
+    padding: 10px 12px 11px;
+    background: var(--surface-card);
+    border: 1px solid var(--line-1); border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    cursor: grab;
+    transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+    --c: var(--label-none);
+  }
+  .card::before { content: ""; position: absolute; left: -1px; top: 9px; bottom: 9px; width: 3px; border-radius: 0 3px 3px 0; background: var(--c); }
+  .card:hover { background: var(--surface-card-hover); border-color: var(--line-2); }
+  .chips { grid-column: 1 / -1; grid-row: 1; display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; padding-right: 28px; min-width: 0; }
+  .card-title { grid-column: 2; grid-row: 2; font-size: var(--text-base); line-height: 1.4; color: var(--text-1); overflow-wrap: anywhere; text-wrap: pretty; cursor: text; }
+  /* No chip row: the trash sits in the top-right corner, so only the title's first line steps around it */
+  .card:has(.card-del):not(:has(.chips)) .card-title::before { content: ""; float: right; width: 22px; height: 1lh; }
+  .card-meta { grid-column: 2; grid-row: 3; margin-top: 8px; display: flex; }
+
+  /* Checkbox: a real input stretched over the drawn box (keyboard + screen reader native) */
+  .check {
+    grid-column: 1; grid-row: 2; position: relative;
+    width: 18px; height: 18px; margin-top: 2px;
+    display: grid; place-items: center;
+    border: 1.5px solid var(--line-3); border-radius: 5px; color: transparent;
+    transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
+  }
+  .card:hover .check { border-color: var(--text-2); }
+  .card .check.is-on { background: var(--text-3); border-color: var(--text-3); color: var(--surface-page); }
+  .check .i { width: 12px; height: 12px; stroke-width: 3; pointer-events: none; }
+  .check-input { position: absolute; inset: -5px; margin: 0; opacity: 0; appearance: none; cursor: pointer; }
+  .check:has(.check-input:focus-visible) { box-shadow: var(--focus-ring); }
+
+  .card-del {
+    position: absolute; top: 8px; right: 8px;
+    width: 26px; height: 26px; display: grid; place-items: center;
+    border-radius: 7px; color: var(--text-3);
+    opacity: 0; transition: opacity var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
+  }
+  .card:not(:has(.chips)) .card-del { top: 7px; }
+  .card:hover .card-del, .card-del:focus-visible { opacity: 1; }
+  .card-del:hover { color: var(--danger); background: color-mix(in oklab, var(--danger) 14%, transparent); }
+  .card-del .i { width: 15px; height: 15px; }
+
+  /* Due-date badge (columns 1 and 5 only) */
+  .due { display: inline-flex; align-items: stretch; height: 24px; border-radius: 6px; background: var(--surface-raised); color: var(--text-2); font-size: var(--text-sm); font-weight: var(--weight-medium); }
+  .due-date { display: inline-flex; align-items: center; gap: 5px; padding: 0 8px; border-radius: 6px; }
+  .due-date .i { width: 13px; height: 13px; color: var(--text-3); }
+  .due-date:hover { color: var(--text-1); }
+  .due-clear { display: grid; place-items: center; width: 24px; border-left: 1px solid var(--line-1); border-radius: 0 6px 6px 0; color: var(--text-3); }
+  .due-clear .i { width: 12px; height: 12px; stroke-width: 2.2; }
+  .due-clear:hover { color: var(--text-1); background: rgb(255 255 255 / 0.05); }
+  .due.is-unset { background: transparent; border: 1px dashed var(--line-2); color: var(--text-3); }
+  .due.is-unset:hover { color: var(--text-1); border-color: var(--line-3); }
+  .due-input { height: 24px; padding: 0 8px; border: 1px solid var(--accent-line); border-radius: 6px; background: var(--surface-sunken); color: var(--text-1); font-size: var(--text-sm); color-scheme: dark; outline: none; }
+
+  /* Card states */
+  .card.is-done { background: transparent; box-shadow: none; }
+  .card.is-done::before { background: var(--label-none); }
+  .card.is-done .chip { color: var(--text-3); background: rgb(255 255 255 / 0.05); }
+  .card.is-done .card-title { color: var(--text-3); text-decoration: line-through; text-decoration-color: var(--text-4); text-decoration-thickness: 1.5px; }
+  .card.is-done .due { background: transparent; color: var(--text-3); }
+  .card.is-done .due-date .i { color: var(--text-4); }
+  .card.is-editing { border-color: var(--accent-line); background: var(--surface-card-hover); cursor: default; }
+  /* Inline title edit: same font, size, line box and position as the title.
+     The ring is an outline (outside the box), so nothing moves. Auto-grows. */
+  .card-input {
+    grid-column: 2; grid-row: 2;
+    display: block; width: 100%; height: 1.4em; padding: 0; margin: 0; border: 0;
+    resize: none; overflow: hidden;
+    background: transparent; color: var(--text-1);
+    font: inherit; font-size: var(--text-base); line-height: 1.4;
+    border-radius: 3px; outline: 1px solid var(--accent-line); outline-offset: 3px;
+    caret-color: var(--accent);
+  }
+  .card-input:focus-visible { box-shadow: none; }
+  .card.is-ghost { background: rgb(255 255 255 / 0.012); box-shadow: none; border: 1px dashed var(--line-2); }
+  .card.is-ghost > * { visibility: hidden; }
+  .card.is-ghost::before { opacity: 0.35; }
+  .card.is-lifted {
+    transform: rotate(-2.2deg) scale(1.03);
+    background: var(--surface-card-hover); border-color: var(--accent-line);
+    box-shadow: var(--shadow-lifted); cursor: grabbing;
+    animation: card-lift var(--dur-base) var(--ease-lift);
+  }
+
+  /* ---------- Error state ---------- */
+  .board-error { display: grid; place-items: center; height: 100%; padding: var(--space-5); }
+  .board-error .empty { width: min(420px, 100%); min-height: 190px; gap: 14px; }
+
+  /* ---------- Phone tab strip (hidden on wider screens) ---------- */
+  .tabs { display: none; }
+
+  /* ---------- Touch: no hover, so the trash stays visible but quiet ---------- */
+  @media (hover: none) {
+    .card-del { opacity: 1; color: var(--text-4); }
+    .card-drag { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+  }
+
+  /* ---------- Phone (about 390px): one column at a time, next one peeking ---------- */
+  @media (max-width: 639px) {
+    .board {
+      display: flex; gap: 10px; padding: 14px 16px 24px;
+      scroll-snap-type: x mandatory; scroll-padding: 0 16px; scrollbar-width: none;
+    }
+    .board::-webkit-scrollbar { display: none; }
+    .board.is-dragging { scroll-snap-type: none; }  /* lets drag auto-scroll move freely */
+    .board > .col { flex: none; width: calc(100vw - 56px); scroll-snap-align: start; }
+    .col-count { display: none; }  /* counts live in the tab strip */
+    .col--today .col-head { padding-right: 34px; }
+    .add-btn { min-height: 44px; }
+    .add-input, .due-input { font-size: var(--text-md); }
+    /* 16px so iOS doesn't zoom, scaled back to the 15px title so nothing moves
+       (the editor compensates its layout height for the scale in JS). */
+    .card-input { font-size: var(--text-md); width: calc(100% * 16 / 15); transform: scale(calc(15 / 16)); transform-origin: 0 0; outline-offset: 3px; }
+
+    .tabs {
+      position: relative; display: flex; flex: none; gap: 6px; padding: 10px 16px;
+      overflow-x: auto; scrollbar-width: none;
+      border-bottom: 1px solid var(--line-1); background: rgb(26 24 22 / 0.86);
+      --fade-l: 0px; --fade-r: 0px;
+      -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent);
+      mask-image: linear-gradient(to right, transparent, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent);
+    }
+    .tabs.can-left { --fade-l: 40px; }
+    .tabs.can-right { --fade-r: 56px; }
+    .tabs::-webkit-scrollbar { display: none; }
+  }
+  .tab { flex: none; display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: var(--radius-pill); border: 1px solid var(--line-1); color: var(--text-2); font-size: 14.5px; font-weight: var(--weight-medium); }
+  .tab b { font-weight: var(--weight-medium); color: var(--text-3); font-variant-numeric: tabular-nums; font-size: var(--text-sm); }
+  .tab.is-on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .tab.is-on b { color: rgb(27 25 21 / 0.6); }
+}
+
+@keyframes card-lift {
+  from { transform: none; box-shadow: var(--shadow-card); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card.is-lifted { transform: none; animation: none; }
+}
