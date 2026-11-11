@@ -8,13 +8,13 @@
   Static design template for the School Tasks redesign. Open by double-click.
   Fonts load from Google Fonts here; in the app they are self-hosted from
   Fontsource (all SIL Open Font License):
-    Fraunces                    @fontsource-variable/fraunces                 weights 400, 500, 600 (opsz axis auto)
-    Atkinson Hyperlegible Next  @fontsource-variable/atkinson-hyperlegible-next weights 400, 500, 600, 700
-    Atkinson Hyperlegible Mono  @fontsource/atkinson-hyperlegible-mono        weight 400 (code + URL fields only)
+    Fraunces                    @fontsource-variable/fraunces       weights 400, 500, 600 (opsz axis auto)
+    Source Sans 3               @fontsource-variable/source-sans-3  weights 400-700 (plain zero, tabular figures)
+    Atkinson Hyperlegible Mono  @fontsource/atkinson-hyperlegible-mono  weight 400 (code + URL fields only)
 -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400&family=Atkinson+Hyperlegible+Next:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400..600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400&family=Source+Sans+3:wght@400..700&family=Fraunces:opsz,wght@9..144,400..600&display=swap" rel="stylesheet">
 <style>
 /* =====================================================================
    DESIGN TOKENS  (copy these into src/index.css as the single source)
@@ -29,7 +29,9 @@
   --surface-page:     #1a1816;  /* app background (dot-grid journal page) */
   --surface-sunken:   #141210;  /* inputs, code, URL field */
   --surface-column:   #1f1d1a;  /* column panel */
-  --surface-today:    #24211e;  /* Today / Due column, one step lifted */
+  --surface-today:    #282521;  /* Today / Due column, clearly lifted */
+  --surface-today-card:       #2f2c27;  /* cards in Today / Due, lifted with their column */
+  --surface-today-card-hover: #34312b;
   --surface-card:     #2a2723;  /* card at rest */
   --surface-card-hover:#302d28; /* card hover */
   --surface-raised:   #34302b;  /* date badge, avatar, skeleton highlight */
@@ -37,7 +39,8 @@
   --surface-scrim:    rgb(10 9 8 / 0.62);
   --dot-grid:         #2c2925;  /* dots on the page background */
 
-  /* Text 1-3 pass WCAG AA on every surface up to --surface-card-hover; text-4 is decorative/disabled only */
+  /* Text 1-3 pass WCAG AA on page, column, Today column, cards (also in Today) and card hover.
+     Text-3 is never set on raised fills or a hovered Today card (icons only there). Text-4 is decorative/disabled only. */
   --text-1: #efe8db;  /* primary, paper white */
   --text-2: #b9b1a3;  /* secondary */
   --text-3: #9b9386;  /* muted: meta, hints, counts (4.5:1 on card hover) */
@@ -47,6 +50,7 @@
   --line-1: #33302b;  /* hairline: card + column edges */
   --line-2: #48433c;  /* stronger: inputs, dashed placeholders */
   --line-3: #615b52;  /* hover borders, checkbox rest */
+  --line-today: rgb(241 233 218 / 0.3);  /* Today / Due column edge */
 
   /* Accent: the UI accent is the paper itself, so it never competes with a class color */
   --accent:       #f1e9da;
@@ -78,11 +82,11 @@
 
   /* Type */
   --font-display: "Fraunces", "Iowan Old Style", Georgia, serif;
-  --font-ui:      "Atkinson Hyperlegible Next", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-ui:      "Source Sans 3", system-ui, -apple-system, "Segoe UI", sans-serif;  /* plain zero, tabular figures */
   --font-code:    "Atkinson Hyperlegible Mono", ui-monospace, "SF Mono", Menlo, monospace;
-  --text-xs:   11px;  /* chips, badges */
-  --text-sm:   12px;  /* meta, hints, counts, date badges */
-  --text-base: 14px;  /* card titles, body, buttons */
+  --text-xs:   12px;  /* chips, badges (semibold/bold) */
+  --text-sm:   13px;  /* meta, counts, column + badge dates: the floor for anything read on the board */
+  --text-base: 15px;  /* card titles, body, buttons */
   --text-md:   16px;  /* inputs on phone (prevents iOS zoom), login fields */
   --text-lg:   19px;  /* column titles, popover titles (display) */
   --text-xl:   30px;  /* brand on sign in */
@@ -148,16 +152,19 @@ h1, h2, h3, h4 { margin: 0; font-weight: inherit; }
 .doc { max-width: 1520px; margin: 0 auto; padding: 56px 32px 120px; }
 .doc-head { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 24px; padding-bottom: 32px; border-bottom: 1px solid var(--line-1); }
 .doc-head h1 { font-family: var(--font-display); font-size: 52px; line-height: 1; font-weight: 500; letter-spacing: -0.01em; }
-.doc-head p { margin-top: 14px; max-width: 62ch; color: var(--text-2); font-size: 16px; }
+.doc-head p { margin-top: 14px; max-width: 62ch; color: var(--text-2); font-size: 17px; }
 .doc-nav { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
-.doc-nav a { color: var(--text-2); text-decoration: none; font-size: 13px; padding: 6px 11px; border: 1px solid var(--line-1); border-radius: var(--radius-pill); }
+.doc-nav a { color: var(--text-2); text-decoration: none; font-size: 14px; padding: 6px 11px; border: 1px solid var(--line-1); border-radius: var(--radius-pill); }
 .doc-nav a:hover { color: var(--text-1); border-color: var(--line-3); }
 .sec { padding-top: 72px; }
 .sec-head { display: flex; align-items: baseline; gap: 24px; margin-bottom: 24px; }
 .sec-head h2 { font-family: var(--font-display); font-size: var(--text-2xl); font-weight: 500; line-height: 1.1; white-space: nowrap; }
-.sec-head p { color: var(--text-2); max-width: 70ch; font-size: 14.5px; }
-.note { color: var(--text-3); font-size: var(--text-sm); margin-top: 10px; max-width: 60ch; }
-.note b { color: var(--text-2); font-weight: 600; }
+.sec-head p { color: var(--text-2); max-width: 72ch; font-size: 16px; }
+.note { color: var(--text-2); font-size: 15px; line-height: 1.6; margin-top: 14px; max-width: 78ch; }
+.note b { color: var(--text-1); font-weight: var(--weight-semibold); }
+.notes { margin-top: 6px; display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); column-gap: 40px; }
+.notes .note { margin-top: 12px; }
+.note-inline { margin: 0; }
 .row { display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start; }
 .frame { border: 1px solid var(--line-1); border-radius: 18px; overflow: hidden; background: var(--surface-page); }
 
@@ -184,7 +191,7 @@ h1, h2, h3, h4 { margin: 0; font-weight: inherit; }
 .brand { display: flex; align-items: baseline; gap: 14px; min-width: 0; }
 .brand-name { display: flex; align-items: center; gap: 9px; font-family: var(--font-display); font-size: var(--text-lg); font-weight: 600; letter-spacing: -0.005em; white-space: nowrap; }
 .brand-mark { width: 12px; height: 20px; background: var(--accent); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 76%, 0 100%); flex: none; align-self: center; }
-.brand-date { color: var(--text-3); font-size: 13px; white-space: nowrap; }
+.brand-date { color: var(--text-3); font-size: 14px; white-space: nowrap; }
 .tools { display: flex; align-items: center; gap: 4px; }
 .tool {
   display: inline-flex; align-items: center; gap: 7px;
@@ -196,39 +203,58 @@ h1, h2, h3, h4 { margin: 0; font-weight: inherit; }
 .tool.is-icon { width: 36px; padding: 0; justify-content: center; }
 .avatar-btn { display: inline-flex; align-items: center; gap: 4px; height: 34px; padding: 0 6px 0 3px; margin-left: 6px; border-radius: var(--radius-pill); color: var(--text-3); }
 .avatar-btn:hover, .avatar-btn.is-open { background: var(--accent-soft); color: var(--text-2); }
-.avatar { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--surface-raised); color: var(--text-1); font-weight: var(--weight-semibold); font-size: 13px; border: 1px solid var(--line-2); }
+.avatar { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--surface-raised); color: var(--text-1); font-weight: var(--weight-semibold); font-size: 14px; border: 1px solid var(--line-2); }
 .avatar-btn svg.i { width: 14px; height: 14px; }
 
-/* Board */
+/* Board: five full-height columns; each list scrolls inside its column */
 .board {
   display: grid; grid-template-columns: repeat(5, minmax(var(--column-width), 1fr));
-  gap: var(--space-3); padding: var(--space-5); overflow-x: auto; align-items: start;
+  gap: var(--space-3); padding: var(--space-5); overflow-x: auto; align-items: stretch;
+  height: calc(100dvh - 60px);  /* app: viewport minus header */
 }
+.frame > .board { height: 740px; }  /* template specimen: a fixed window height */
 .col {
   position: relative;
   display: flex; flex-direction: column;
-  min-height: 560px;
+  min-height: 0;
   padding: 14px var(--space-2) var(--space-2);
   background: var(--surface-column);
   border: 1px solid var(--line-1);
   border-radius: var(--radius-column);
   transition: background var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out);
 }
-.col--today { background: var(--surface-today); border-color: #3a362f; }
-.ribbon { position: absolute; top: -1px; right: 18px; width: 12px; height: 28px; background: var(--accent); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 76%, 0 100%); }
+.col--today { background: var(--surface-today); border-color: var(--line-today); --surface-card: var(--surface-today-card); --surface-card-hover: var(--surface-today-card-hover); }
+.col--today .col-title { color: var(--accent); font-weight: var(--weight-semibold); }
+.col--today .col-date { color: var(--text-1); }
+.ribbon { position: absolute; top: -1px; right: 16px; width: 12px; height: 28px; background: var(--accent); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 76%, 0 100%); }
 .col--over { background: color-mix(in oklab, var(--accent) 5%, var(--surface-column)); border: 1px dashed var(--accent-line); }
-.col-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; min-height: 52px; padding: 0 6px 10px; }
-.col--today .col-head { padding-right: 34px; }
+.col-head { flex: none; display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; min-height: 52px; padding: 0 6px 10px; }
+.col--today .col-head { padding-right: 42px; }  /* count clears the ribbon by 14px */
 .col-title { font-family: var(--font-display); font-size: var(--text-lg); font-weight: 500; line-height: var(--leading-tight); letter-spacing: -0.005em; }
-.col-date { margin-top: 3px; color: var(--text-2); font-size: 13px; }
-.col-count { color: var(--text-3); font-size: var(--text-sm); font-variant-numeric: tabular-nums; padding-top: 5px; }
-.col-list { position: relative; display: flex; flex-direction: column; gap: var(--space-2); }
+.col-date { margin-top: 3px; color: var(--text-2); font-size: var(--text-sm); }
+.col-count {
+  flex: none; min-width: 24px; height: 22px; padding: 0 7px; margin-top: 1px;
+  display: inline-grid; place-items: center; border-radius: var(--radius-pill);
+  background: rgb(241 233 218 / 0.07); color: var(--text-2);
+  font-size: var(--text-sm); font-weight: var(--weight-semibold); font-variant-numeric: tabular-nums;
+}
+.col-count.is-zero { background: transparent; box-shadow: inset 0 0 0 1px var(--line-2); color: var(--text-3); }
+.col-list {
+  position: relative; flex: 0 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+  display: flex; flex-direction: column; gap: var(--space-2);
+  margin: -4px; padding: 4px;  /* room for focus rings + card shadow inside the scroller */
+  scrollbar-width: thin; scrollbar-color: var(--line-2) transparent;
+}
+.col-list > * { flex: none; }
 
-/* Card */
+/* Card
+   Row 1: chips, from the left padding; trash at the row's right end.
+   Row 2: checkbox + title; the title runs to the right padding.
+   Row 3: due-date badge (columns 1 and 5), under the title. */
 .card {
   position: relative;
-  display: grid; grid-template-columns: 18px 1fr; gap: 10px;
-  padding: 10px 8px 10px 13px;
+  display: grid; grid-template-columns: 18px minmax(0, 1fr); column-gap: 10px;
+  padding: 10px 12px 11px;
   background: var(--surface-card);
   border: 1px solid var(--line-1);
   border-radius: var(--radius-card);
@@ -239,8 +265,7 @@ h1, h2, h3, h4 { margin: 0; font-weight: inherit; }
 }
 .card::before { content: ""; position: absolute; left: -1px; top: 9px; bottom: 9px; width: 3px; border-radius: 0 3px 3px 0; background: var(--c); }
 .card:hover, .card.is-hover { background: var(--surface-card-hover); border-color: var(--line-2); }
-.card-body { min-width: 0; padding-right: 24px; }
-.chips { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 5px; }
+.chips { grid-column: 1 / -1; grid-row: 1; display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; padding-right: 28px; min-width: 0; }
 .chip {
   display: inline-flex; align-items: center; max-width: 100%;
   padding: 3px 7px; border-radius: var(--radius-chip);
@@ -256,27 +281,30 @@ h1, h2, h3, h4 { margin: 0; font-weight: inherit; }
   background: var(--danger); color: var(--danger-ink);
 }
 .badge-overdue svg.i { width: 12px; height: 12px; stroke-width: 2.4; }
-.card-title { font-size: var(--text-base); line-height: 1.4; color: var(--text-1); overflow-wrap: anywhere; cursor: text; }
-.card-meta { margin-top: 8px; display: flex; }
+.card-title { grid-column: 2; grid-row: 2; font-size: var(--text-base); line-height: 1.4; color: var(--text-1); overflow-wrap: anywhere; text-wrap: pretty; cursor: text; }
+/* No chip row: the trash sits in the top-right corner, so only the title's first line steps around it */
+.card:not(:has(.chips)) .card-title::before { content: ""; float: right; width: 22px; height: 1lh; }
+.card-meta { grid-column: 2; grid-row: 3; margin-top: 8px; display: flex; }
 
 .check {
-  width: 18px; height: 18px; margin-top: 1px;
+  grid-column: 1; grid-row: 2;
+  width: 18px; height: 18px; margin-top: 2px;  /* centred on the 21px title line */
   display: grid; place-items: center;
   border: 1.5px solid var(--line-3); border-radius: 5px;
   color: transparent;
   transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
 }
-.card:has(.chips) .check { margin-top: 26px; }  /* align with the title line, not the chip */
 .card:hover .check, .card.is-hover .check { border-color: var(--text-2); }
 .check svg.i { width: 12px; height: 12px; stroke-width: 3; }
 .check.is-on { background: var(--text-3); border-color: var(--text-3); color: var(--surface-page); }
 
 .card-del {
-  position: absolute; top: 6px; right: 6px;
+  position: absolute; top: 8px; right: 8px;  /* centred on the chip row */
   width: 26px; height: 26px; display: grid; place-items: center;
   border-radius: 7px; color: var(--text-3);
   opacity: 0; transition: opacity var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
 }
+.card:not(:has(.chips)) .card-del { top: 7px; }  /* centred on the first title line */
 .card:hover .card-del, .card.is-hover .card-del { opacity: 1; }
 .card-del:hover, .card-del.is-hot { color: var(--danger); background: color-mix(in oklab, var(--danger) 14%, transparent); }
 .card-del svg.i { width: 15px; height: 15px; }
@@ -297,38 +325,43 @@ h1, h2, h3, h4 { margin: 0; font-weight: inherit; }
 .card.is-done::before { background: var(--label-none); }  /* beats the inline --c */
 .card.is-done .chip { color: var(--text-3); background: rgb(255 255 255 / 0.05); }
 .card.is-done .card-title { color: var(--text-3); text-decoration: line-through; text-decoration-color: var(--text-4); text-decoration-thickness: 1.5px; }
-.card.is-done .due { background: transparent; color: var(--text-4); }
+.card.is-done .due { background: transparent; color: var(--text-3); }
+.card.is-done .due-date svg.i { color: var(--text-4); }
 .card.is-editing { border-color: var(--accent-line); background: var(--surface-card-hover); cursor: default; }
+/* Inline title edit: same font, size, line box and position as the title, so nothing moves.
+   The ring is an outline (outside the box), not a border or padding. In the app this is an
+   auto-growing textarea with the same metrics, for titles that wrap. */
 .card-input {
-  width: 100%; padding: 5px 7px; margin: -1px 0 0 -2px;
-  background: var(--surface-sunken); border: 1px solid var(--accent-line); border-radius: 6px;
-  font-size: var(--text-base); color: var(--text-1); outline: none;
+  grid-column: 2; grid-row: 2;
+  display: block; width: 100%; height: 1.4em; padding: 0; margin: 0; border: 0;
+  background: transparent; color: var(--text-1);
+  font: inherit; font-size: var(--text-base); line-height: 1.4;
+  border-radius: 3px; outline: 1px solid var(--accent-line); outline-offset: 3px;
+  caret-color: var(--accent);
 }
-.edit-hint { margin-top: 6px; color: var(--text-3); font-size: var(--text-sm); }
-.kbd { font-family: var(--font-ui); font-size: 11px; padding: 1px 5px; border-radius: 4px; border: 1px solid var(--line-2); color: var(--text-2); }
-.card.is-ghost { background: transparent; box-shadow: none; border: 1.5px dashed var(--line-2); }
-.card.is-ghost > * , .card.is-ghost::before { visibility: hidden; }
+.card.is-ghost { background: rgb(255 255 255 / 0.012); box-shadow: none; border: 1px dashed var(--line-2); }
+.card.is-ghost > * { visibility: hidden; }  /* same contents as the card that left, so exactly its height */
+.card.is-ghost::before { opacity: 0.35; }   /* a faint trace of its class color */
 .card.is-lifted {
-  position: absolute; z-index: 4; left: 10px; right: -14px; bottom: 70px;
+  position: relative; z-index: 4; margin: 22px -12px 0 8px;
   transform: rotate(-2.2deg) scale(1.03);
   background: var(--surface-card-hover); border-color: var(--accent-line);
   box-shadow: var(--shadow-lifted); cursor: grabbing;
 }
-.drop-hint { display: flex; gap: 8px; align-items: flex-start; margin: 4px 2px 0; padding: 10px; border-radius: var(--radius-card); color: var(--text-2); font-size: var(--text-sm); background: var(--accent-soft); }
+.drop-hint { display: flex; gap: 8px; align-items: flex-start; margin-top: 4px; padding: 10px 12px; border-radius: var(--radius-card); color: var(--text-2); font-size: var(--text-sm); line-height: 1.45; background: var(--accent-soft); }
 .drop-hint svg.i { width: 14px; height: 14px; margin-top: 2px; color: var(--accent); }
 
 /* Column footer controls */
-.toggle-done { display: flex; align-items: center; gap: 6px; margin: 10px 4px 0; padding: 4px 6px; border-radius: 6px; color: var(--text-3); font-size: var(--text-sm); font-weight: var(--weight-medium); }
+.toggle-done { flex: none; display: flex; align-items: center; gap: 6px; margin: 10px 4px 0; padding: 4px 6px; border-radius: 6px; color: var(--text-3); font-size: var(--text-sm); font-weight: var(--weight-medium); }
 .toggle-done:hover { color: var(--text-1); background: var(--accent-soft); }
 .toggle-done svg.i { width: 13px; height: 13px; transition: transform var(--dur-base) var(--ease-out); }
 .toggle-done.is-open svg.i { transform: rotate(90deg); }
-.add-btn { display: flex; align-items: center; gap: 8px; width: 100%; margin-top: 6px; padding: 8px 10px; border-radius: var(--radius-control); color: var(--text-3); font-size: var(--text-base); text-align: left; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
+.add-btn { flex: none; display: flex; align-items: center; gap: 8px; width: 100%; margin-top: 6px; padding: 8px 10px; border-radius: var(--radius-control); color: var(--text-3); font-size: var(--text-base); text-align: left; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
 .add-btn:hover { color: var(--text-1); background: var(--accent-soft); }
 .add-btn svg.i { width: 15px; height: 15px; }
-.add-field { margin-top: 8px; }
+.add-field { flex: none; margin-top: 8px; }
 .add-input { width: 100%; height: 38px; padding: 0 11px; background: var(--surface-sunken); border: 1px solid var(--accent-line); border-radius: var(--radius-control); color: var(--text-1); font-size: var(--text-base); outline: none; box-shadow: 0 0 0 3px rgb(241 233 218 / 0.07); }
 .add-input::placeholder { color: var(--text-3); }
-.add-hint { margin: 7px 4px 0; color: var(--text-3); font-size: var(--text-sm); line-height: 1.45; }
 .empty { display: grid; place-items: center; min-height: 150px; padding: 16px; border: 1px dashed var(--line-1); border-radius: var(--radius-card); text-align: center; }
 .empty p { color: var(--text-2); font-size: var(--text-base); }
 .empty p + p { margin-top: 2px; color: var(--text-3); font-size: var(--text-sm); }
@@ -343,29 +376,30 @@ h1, h2, h3, h4 { margin: 0; font-weight: inherit; }
   padding: var(--space-4);
 }
 .pop-title { font-family: var(--font-display); font-size: var(--text-lg); font-weight: 500; line-height: var(--leading-tight); }
-.pop-lede { margin-top: 6px; color: var(--text-2); font-size: 13px; line-height: 1.5; }
+.pop-lede { margin-top: 6px; color: var(--text-2); font-size: 14px; line-height: 1.5; }
 .pop-rule { height: 1px; background: var(--line-1); margin: var(--space-4) calc(var(--space-4) * -1); }
-.pop-h { font-weight: var(--weight-semibold); font-size: 13.5px; color: var(--text-1); }
-.pop-p { margin-top: 4px; color: var(--text-2); font-size: 13px; line-height: 1.5; }
+.pop-h { font-weight: var(--weight-semibold); font-size: 14.5px; color: var(--text-1); }
+.pop-p { margin-top: 4px; color: var(--text-2); font-size: 14px; line-height: 1.5; }
+.pop-quiet { margin-top: 14px; color: var(--text-3); font-size: var(--text-sm); }
 .pop-foot { color: var(--text-3); font-size: var(--text-sm); line-height: 1.5; display: flex; gap: 10px; align-items: flex-start; }
 .swatch-bar { width: 3px; height: 30px; border-radius: 3px; background: var(--label-none); flex: none; margin-top: 2px; }
 code, .code { font-family: var(--font-code); font-size: 12.5px; background: var(--surface-sunken); border: 1px solid var(--line-1); border-radius: 5px; padding: 1px 6px; color: var(--text-1); }
 
 .example { margin-top: 12px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; padding: 10px; border-radius: var(--radius-card); background: var(--surface-sunken); border: 1px solid var(--line-1); }
-.example .typed { font-size: 13px; color: var(--text-1); }
+.example .typed { font-size: 14px; color: var(--text-1); }
 .example .typed em { font-style: normal; color: var(--class-stats); }
 .example svg.i { color: var(--text-3); width: 14px; height: 14px; }
-.example .result { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; font-size: 13px; }
+.example .result { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; font-size: 14px; }
 
 .class-list { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 2px; }
 .class-list li { display: grid; grid-template-columns: 20px 1fr; gap: 8px; align-items: baseline; padding: 6px 0; }
 .class-list .n { color: var(--text-3); font-size: var(--text-sm); font-variant-numeric: tabular-nums; text-align: right; }
 .class-list .chip { --surface-card: var(--surface-overlay); }
-.class-list .aka { margin-top: 4px; font-size: 12.5px; color: var(--text-2); line-height: 1.5; }
+.class-list .aka { margin-top: 4px; font-size: 13.5px; color: var(--text-2); line-height: 1.5; }
 .class-list .aka span { color: var(--text-3); }
 
 .url-row { display: flex; gap: 8px; margin-top: 14px; }
-.url { min-width: 0; flex: 1; height: 36px; padding: 0 10px; background: var(--surface-sunken); border: 1px solid var(--line-2); border-radius: var(--radius-control); color: var(--text-2); font-family: var(--font-code); font-size: 12px; outline: none; }
+.url { min-width: 0; flex: 1; height: 36px; padding: 0 10px; background: var(--surface-sunken); border: 1px solid var(--line-2); border-radius: var(--radius-control); color: var(--text-2); font-family: var(--font-code); font-size: 12.5px; outline: none; }
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 7px;
   height: 36px; padding: 0 14px; border-radius: var(--radius-control);
@@ -378,20 +412,20 @@ code, .code { font-family: var(--font-code); font-size: 12.5px; background: var(
 .btn-secondary:hover { background: var(--accent-soft); border-color: var(--line-3); }
 .btn-quiet { color: var(--text-2); font-weight: var(--weight-medium); }
 .btn-quiet:hover { color: var(--text-1); background: var(--accent-soft); }
-.btn-sm { height: 30px; padding: 0 11px; font-size: 13px; }
+.btn-sm { height: 30px; padding: 0 11px; font-size: 14px; }
 .btn-copied { background: color-mix(in oklab, var(--success) 18%, var(--surface-overlay)); color: var(--success); }
 .btn svg.i { width: 15px; height: 15px; }
 .steps { margin-top: 14px; display: grid; gap: 10px; }
 .step { display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: start; }
 .app-ico { width: 28px; height: 28px; border-radius: 7px; display: grid; place-items: center; background: var(--surface-raised); color: var(--text-2); font-weight: var(--weight-bold); font-size: 12px; }
-.step b { display: block; font-size: 13px; font-weight: var(--weight-semibold); }
-.step p { color: var(--text-2); font-size: 12.5px; line-height: 1.5; }
+.step b { display: block; font-size: 14px; font-weight: var(--weight-semibold); }
+.step p { color: var(--text-2); font-size: 13.5px; line-height: 1.5; }
 
 .menu { width: 268px; padding: 6px; background: var(--surface-overlay); border: 1px solid var(--line-2); border-radius: var(--radius-popover); box-shadow: var(--shadow-pop); }
 .menu-who { padding: 10px 10px 12px; display: flex; gap: 10px; align-items: center; }
 .menu-who .avatar { width: 34px; height: 34px; font-size: 14px; }
 .menu-who small { display: block; color: var(--text-3); font-size: var(--text-sm); }
-.menu-who strong { display: block; font-weight: var(--weight-medium); font-size: 13.5px; }
+.menu-who strong { display: block; font-weight: var(--weight-medium); font-size: 14.5px; }
 .menu-sep { height: 1px; background: var(--line-1); margin: 2px 4px 6px; }
 .menu-item { display: flex; width: 100%; align-items: flex-start; gap: 10px; padding: 9px 10px; border-radius: var(--radius-control); text-align: left; color: var(--text-1); font-size: var(--text-base); }
 .menu-item svg.i { margin-top: 2px; color: var(--text-3); }
@@ -415,27 +449,27 @@ code, .code { font-family: var(--font-code); font-size: 12.5px; background: var(
 .seg button { height: 34px; border-radius: 7px; color: var(--text-3); font-weight: var(--weight-medium); }
 .seg button.is-on { background: var(--surface-raised); color: var(--text-1); box-shadow: 0 1px 2px rgb(0 0 0 / 0.4); }
 .field { display: block; margin-bottom: 14px; }
-.field span { display: block; margin-bottom: 6px; font-size: 13px; font-weight: var(--weight-medium); color: var(--text-2); }
+.field span { display: block; margin-bottom: 6px; font-size: 14px; font-weight: var(--weight-medium); color: var(--text-2); }
 .field input { width: 100%; height: 42px; padding: 0 12px; background: var(--surface-sunken); border: 1px solid var(--line-2); border-radius: var(--radius-control); font-size: var(--text-md); color: var(--text-1); outline: none; transition: border-color var(--dur-fast) var(--ease-out); }
 .field input:focus { border-color: var(--accent-line); box-shadow: 0 0 0 3px rgb(241 233 218 / 0.07); }
 .field-hint { display: block; margin-top: 6px; color: var(--text-3); font-size: var(--text-sm); }
 .field.is-invalid input { border-color: color-mix(in oklab, var(--danger) 55%, var(--line-2)); }
-.msg { display: flex; gap: 9px; align-items: flex-start; padding: 10px 12px; margin-bottom: 14px; border-radius: var(--radius-control); font-size: 13.5px; line-height: 1.45; }
+.msg { display: flex; gap: 9px; align-items: flex-start; padding: 10px 12px; margin-bottom: 14px; border-radius: var(--radius-control); font-size: 14.5px; line-height: 1.45; }
 .msg svg.i { margin-top: 2px; }
 .msg-error { background: color-mix(in oklab, var(--danger) 11%, var(--surface-column)); color: #ffb3ad; border: 1px solid color-mix(in oklab, var(--danger) 28%, transparent); }
 .msg-error svg.i { color: var(--danger); }
 .msg-info { background: color-mix(in oklab, var(--success) 10%, var(--surface-column)); color: #b5ecd2; border: 1px solid color-mix(in oklab, var(--success) 26%, transparent); }
 .msg-info svg.i { color: var(--success); }
 .auth .btn { width: 100%; height: 42px; font-size: 15px; }
-.or { display: flex; align-items: center; gap: 12px; margin: 16px 0; color: var(--text-3); font-size: 13px; }
+.or { display: flex; align-items: center; gap: 12px; margin: 16px 0; color: var(--text-3); font-size: 14px; }
 .or::before, .or::after { content: ""; flex: 1; height: 1px; background: var(--line-1); }
-.auth-foot { margin-top: 16px; text-align: center; color: var(--text-3); font-size: 13px; }
+.auth-foot { margin-top: 16px; text-align: center; color: var(--text-3); font-size: 14px; }
 
 /* =====================================================================
    FEEDBACK: toasts, offline, install, skeleton
    ===================================================================== */
 .toasts { display: flex; flex-direction: column; gap: 8px; width: 340px; }
-.toast { display: grid; grid-template-columns: 20px 1fr 22px; gap: 10px; align-items: start; padding: 11px 10px 11px 12px; background: var(--surface-overlay); border: 1px solid var(--line-2); border-radius: 12px; box-shadow: var(--shadow-pop); font-size: 13.5px; line-height: 1.45; }
+.toast { display: grid; grid-template-columns: 20px 1fr 22px; gap: 10px; align-items: start; padding: 11px 10px 11px 12px; background: var(--surface-overlay); border: 1px solid var(--line-2); border-radius: 12px; box-shadow: var(--shadow-pop); font-size: 14.5px; line-height: 1.45; }
 .toast-ico { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; }
 .toast-ico svg.i { width: 12px; height: 12px; stroke-width: 2.6; }
 .toast--success .toast-ico { background: color-mix(in oklab, var(--success) 22%, transparent); color: var(--success); }
@@ -449,13 +483,13 @@ code, .code { font-family: var(--font-code); font-size: 12.5px; background: var(
 .toast-stage { position: relative; height: 300px; }
 .toast-stage .toasts { position: absolute; right: 20px; bottom: 20px; }
 
-.offline { display: flex; align-items: center; justify-content: center; gap: 9px; padding: 8px 16px; background: color-mix(in oklab, var(--warning) 13%, var(--surface-page)); border-bottom: 1px solid color-mix(in oklab, var(--warning) 30%, transparent); color: #f6d6a6; font-size: 13px; }
+.offline { display: flex; align-items: center; justify-content: center; gap: 9px; padding: 8px 16px; background: color-mix(in oklab, var(--warning) 13%, var(--surface-page)); border-bottom: 1px solid color-mix(in oklab, var(--warning) 30%, transparent); color: #f6d6a6; font-size: 14px; }
 .offline svg.i { color: var(--warning); width: 15px; height: 15px; }
 
 .install { display: inline-flex; align-items: center; gap: 12px; padding: 10px 10px 10px 12px; background: var(--surface-overlay); border: 1px solid var(--line-2); border-radius: var(--radius-popover); box-shadow: var(--shadow-pop); }
 .install-ico { width: 36px; height: 36px; border-radius: 9px; display: grid; place-items: center; background: var(--surface-page); border: 1px solid var(--line-2); }
 .install-ico .brand-mark { width: 11px; height: 18px; }
-.install strong { display: block; font-size: 13.5px; font-weight: var(--weight-semibold); }
+.install strong { display: block; font-size: 14.5px; font-weight: var(--weight-semibold); }
 .install small { display: block; color: var(--text-3); font-size: var(--text-sm); }
 .install-actions { display: flex; gap: 4px; margin-left: 6px; }
 
@@ -464,7 +498,7 @@ code, .code { font-family: var(--font-code); font-size: 12.5px; background: var(
 @keyframes shimmer { to { transform: translateX(100%); } }
 .sk-card { height: 64px; border-radius: var(--radius-card); border: 1px solid var(--line-1); }
 .sk-card.tall { height: 84px; }
-.col.is-skeleton { min-height: 380px; }
+.frame > .board.is-skeleton { height: 460px; }
 .sk-line { height: 10px; }
 
 /* =====================================================================
@@ -477,15 +511,19 @@ code, .code { font-family: var(--font-code); font-size: 12.5px; background: var(
 .phone .topbar { height: 52px; padding: 0 10px 0 16px; flex: none; }
 .phone .brand-date { display: none; }
 .phone .tools { gap: 0; }
-.tabs { display: flex; gap: 6px; padding: 10px 16px; overflow-x: auto; flex: none; scrollbar-width: none; border-bottom: 1px solid var(--line-1); background: rgb(26 24 22 / 0.86); }
+.tabs { position: relative; display: flex; gap: 6px; padding: 10px 16px; overflow-x: auto; flex: none; scrollbar-width: none; border-bottom: 1px solid var(--line-1); background: rgb(26 24 22 / 0.86); --fade-l: 0px; --fade-r: 0px; }
+/* Edge fade where more tabs are off-screen (script sets .can-left / .can-right from the scroll position) */
+.tabs { -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent); mask-image: linear-gradient(to right, transparent, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent); }
+.tabs.can-left { --fade-l: 40px; }
+.tabs.can-right { --fade-r: 56px; }
 .tabs::-webkit-scrollbar { display: none; }
-.tab { flex: none; display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: var(--radius-pill); border: 1px solid var(--line-1); color: var(--text-2); font-size: 13.5px; font-weight: var(--weight-medium); }
+.tab { flex: none; display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: var(--radius-pill); border: 1px solid var(--line-1); color: var(--text-2); font-size: 14.5px; font-weight: var(--weight-medium); }
 .tab b { font-weight: var(--weight-medium); color: var(--text-3); font-variant-numeric: tabular-nums; font-size: var(--text-sm); }
 .tab.is-on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 .tab.is-on b { color: rgb(27 25 21 / 0.6); }
 .m-cols { flex: 1; display: flex; gap: 10px; padding: 14px 16px 24px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding: 16px; scrollbar-width: none; }
 .m-cols::-webkit-scrollbar { display: none; }
-.m-cols .col { flex: none; width: 334px; min-height: 0; align-self: flex-start; scroll-snap-align: start; }
+.m-cols .col { flex: none; width: 334px; min-height: 0; align-self: stretch; scroll-snap-align: start; }
 .m-cols .card-del { opacity: 1; color: var(--text-4); } /* no hover on touch: trash is always visible but quiet */
 .m-cols .add-btn { min-height: 44px; }
 .sheet-scrim { position: absolute; inset: 0; background: var(--surface-scrim); z-index: 10; }
@@ -498,16 +536,16 @@ code, .code { font-family: var(--font-code); font-size: 12.5px; background: var(
 .tok-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
 .tok { display: flex; gap: 12px; align-items: center; padding: 10px; border: 1px solid var(--line-1); border-radius: var(--radius-card); background: var(--surface-column); }
 .tok-sw { width: 40px; height: 40px; border-radius: 8px; flex: none; border: 1px solid rgb(255 255 255 / 0.08); }
-.tok b { display: block; font-size: 13px; font-weight: var(--weight-semibold); }
-.tok code { display: inline-block; margin-top: 3px; font-size: 11.5px; padding: 0 5px; }
-.tok small { display: block; color: var(--text-3); font-size: 12px; margin-top: 2px; }
+.tok b { display: block; font-size: 14px; font-weight: var(--weight-semibold); }
+.tok code { display: inline-block; margin-top: 3px; font-size: 12px; padding: 0 5px; }
+.tok small { display: block; color: var(--text-3); font-size: 13px; margin-top: 2px; }
 .tok-h { font-family: var(--font-display); font-size: 22px; font-weight: 500; margin: 36px 0 14px; }
 .tok-h:first-child { margin-top: 0; }
 .typescale { display: grid; gap: 0; border: 1px solid var(--line-1); border-radius: var(--radius-card); overflow: hidden; }
 .typescale div { display: grid; grid-template-columns: 220px 1fr; gap: 16px; align-items: baseline; padding: 12px 14px; border-bottom: 1px solid var(--line-1); background: var(--surface-column); }
 .typescale div:last-child { border-bottom: 0; }
-.typescale small { color: var(--text-3); font-size: 12px; }
-.tok-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.typescale small { color: var(--text-3); font-size: 13px; }
+.tok-table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .tok-table td { padding: 9px 12px; border-bottom: 1px solid var(--line-1); vertical-align: middle; }
 .tok-table td:first-child { color: var(--text-2); width: 220px; }
 .tok-table td:last-child { color: var(--text-3); }
@@ -585,38 +623,29 @@ code, .code { font-family: var(--font-code); font-size: 12.5px; background: var(
         <header class="col-head"><h3 class="col-title">Upcoming Tests</h3><span class="col-count">4</span></header>
         <div class="col-list">
           <article class="card" style="--c:var(--class-stats)">
+            <div class="chips"><span class="chip">AP Statistics</span></div>
             <button class="check" aria-label="Mark complete"><svg class="i"><use href="#i-check"/></svg></button>
-            <div class="card-body">
-              <div class="chips"><span class="chip">AP Statistics</span></div>
-              <p class="card-title">Chapter 6 quiz: sampling distributions</p>
-              <div class="card-meta"><span class="due"><button class="due-date"><svg class="i"><use href="#i-cal"/></svg>Mon 16 Nov</button><button class="due-clear" aria-label="Clear due date"><svg class="i"><use href="#i-x"/></svg></button></span></div>
-            </div>
+            <p class="card-title">Chapter 6 quiz: sampling distributions</p>
+            <div class="card-meta"><span class="due"><button class="due-date"><svg class="i"><use href="#i-cal"/></svg>Mon 16 Nov</button><button class="due-clear" aria-label="Clear due date"><svg class="i"><use href="#i-x"/></svg></button></span></div>
             <button class="card-del" aria-label="Delete task"><svg class="i"><use href="#i-trash"/></svg></button>
           </article>
           <article class="card is-hover" style="--c:var(--class-calc-bc)">
+            <div class="chips"><span class="chip">AP Calculus BC</span></div>
             <button class="check" aria-label="Mark complete"><svg class="i"><use href="#i-check"/></svg></button>
-            <div class="card-body">
-              <div class="chips"><span class="chip">AP Calculus BC</span></div>
-              <p class="card-title">Unit 3 test: derivatives and related rates</p>
-              <div class="card-meta"><span class="due"><button class="due-date"><svg class="i"><use href="#i-cal"/></svg>Fri 20 Nov</button><button class="due-clear" aria-label="Clear due date"><svg class="i"><use href="#i-x"/></svg></button></span></div>
-            </div>
+            <p class="card-title">Unit 3 test: derivatives and related rates</p>
+            <div class="card-meta"><span class="due"><button class="due-date"><svg class="i"><use href="#i-cal"/></svg>Fri 20 Nov</button><button class="due-clear" aria-label="Clear due date"><svg class="i"><use href="#i-x"/></svg></button></span></div>
             <button class="card-del is-hot" aria-label="Delete task"><svg class="i"><use href="#i-trash"/></svg></button>
           </article>
           <article class="card is-editing" style="--c:var(--class-gov)">
+            <div class="chips"><span class="chip">AP Government &amp; Politics</span></div>
             <button class="check" aria-label="Mark complete"><svg class="i"><use href="#i-check"/></svg></button>
-            <div class="card-body">
-              <div class="chips"><span class="chip">AP Government &amp; Politics</span></div>
-              <input class="card-input" value="AP Gov unit 2 exam (FRQ)" aria-label="Task title">
-              <p class="edit-hint"><span class="kbd">Enter</span> saves, <span class="kbd">Esc</span> cancels</p>
-              <div class="card-meta"><span class="due"><button class="due-date"><svg class="i"><use href="#i-cal"/></svg>Tue 24 Nov</button><button class="due-clear" aria-label="Clear due date"><svg class="i"><use href="#i-x"/></svg></button></span></div>
-            </div>
+            <input class="card-input" value="AP Gov unit 2 exam (FRQ)" aria-label="Task title">
+            <div class="card-meta"><span class="due"><button class="due-date"><svg class="i"><use href="#i-cal"/></svg>Tue 24 Nov</button><button class="due-clear" aria-label="Clear due date"><svg class="i"><use href="#i-x"/></svg></button></span></div>
           </article>
           <article class="card">
             <button class="check" aria-label="Mark complete"><svg class="i"><use href="#i-check"/></svg></button>
-            <div class="card-body">
-              <p class="card-title">SAT practice test, full length</p>
-              <div class="card-meta"><span class="due is-unset"><button class="due-date"><svg class="i"><use href="#i-cal"/></svg>Set date</button></span></div>
-            </div>
+            <p class="card-title">SAT practice test, full length</p>
+            <div class="card-meta"><span class="due is-unset"><button class="due-date"><svg class="i"><use href="#i-cal"/></svg>Set date</button></span></div>
             <button class="card-del" aria-label="Delete task"><svg class="i"><use href="#i-trash"/></svg></button>
           </article>
         </div>
@@ -629,41 +658,33 @@ code, .code { font-family: var(--font-code); font-size: 12.5px; background: var(
         <header class="col-head"><div><h3 class="col-title">Today / Due</h3><p class="col-date">Wed 11 Nov</p></div><span class="col-count">4</span></header>
         <div class="col-list">
           <article class="card" style="--c:var(--class-ai-ml)">
+            <div class="chips"><span class="chip">AI &amp; Machine Learning</span></div>
             <button class="check" aria-label="Mark complete"><svg class="i"><use href="#i-check"/></svg></button>
-            <div class="card-body">
-              <div class="chips"><span class="chip">AI &amp; Machine Learning</span></div>
-              <p class="card-title">Lab 4 notebook: gradient descent</p>
-            </div>
+            <p class="card-title">Lab 4 notebook: gradient descent</p>
             <button class="card-del" aria-label="Delete task"><svg class="i"><use href="#i-trash"/></svg></button>
           </article>
           <article class="card" style="--c:var(--class-calc-bc)">
+            <div class="chips"><span class="chip">AP Calculus BC</span></div>
             <button class="check" aria-label="Mark complete"><svg class="i"><use href="#i-check"/></svg></button>
-            <div class="card-body">
-              <div class="chips"><span class="chip">AP Calculus BC</span></div>
-              <p class="card-title">Problem set 3.4, odd numbers</p>
-            </div>
+            <p class="card-title">Problem set 3.4, odd numbers</p>
             <button class="card-del" aria-label="Delete task"><svg class="i"><use href="#i-trash"/></svg></button>
           </article>
           <article class="card" style="--c:var(--class-seng)">
+            <div class="chips"><span class="chip">Senior English</span><span class="badge-overdue"><svg class="i"><use href="#i-clock"/></svg>Overdue</span></div>
             <button class="check" aria-label="Mark complete"><svg class="i"><use href="#i-check"/></svg></button>
-            <div class="card-body">
-              <div class="chips"><span class="chip">Senior English</span><span class="badge-overdue"><svg class="i"><use href="#i-clock"/></svg>Overdue</span></div>
-              <p class="card-title">Gatsby ch. 5 annotations</p>
-            </div>
+            <p class="card-title">Gatsby ch. 5 annotations</p>
             <button class="card-del" aria-label="Delete task"><svg class="i"><use href="#i-trash"/></svg></button>
           </article>
           <article class="card" style="--c:var(--class-seminar)">
+            <div class="chips"><span class="chip">Seminar</span></div>
             <button class="check" aria-label="Mark complete"><svg class="i"><use href="#i-check"/></svg></button>
-            <div class="card-body">
-              <div class="chips"><span class="chip">Seminar</span></div>
-              <p class="card-title">Reading response, Sandel ch. 2</p>
-            </div>
+            <p class="card-title">Reading response, Sandel ch. 2</p>
             <button class="card-del" aria-label="Delete task"><svg class="i"><use href="#i-trash"/></svg></button>
           </article>
           <!-- source slot of the card being dragged -->
           <article class="card is-ghost" style="--c:var(--class-spex)" aria-hidden="true">
-            <span class="check"></span>
-            <div class="card-body"><div class="chips"><span class="chip">SPEX</span></div><p class="card-title">Reflection journal, week 9</p></div>
+            <div class="chips"><span class="chip">SPEX</span></div>
+            <span class="check"></span><p class="card-title">Reflection journal, week 9</p>
           </article>
         </div>
         <button class="toggle-done"><svg class="i"><use href="#i-chev-right"/></svg>Show completed (2)</button>
@@ -675,52 +696,42 @@ code, .code { font-family: var(--font-code); font-size: 12.5px; background: var(
         <header class="col-head"><div><h3 class="col-title">Next School Day</h3><p class="col-date">Thu 12 Nov</p></div><span class="col-count">4</span></header>
         <div class="col-list">
           <article class="card" style="--c:var(--class-stats)">
+            <div class="chips"><span class="chip">AP Statistics</span></div>
             <button class="check" aria-label="Mark complete"><svg class="i"><use href="#i-check"/></svg></button>
-            <div class="card-body">
-              <div class="chips"><span class="chip">AP Statistics</span></div>
-              <p class="card-title">Homework 6.2</p>
-            </div>
+            <p class="card-title">Homework 6.2</p>
             <button class="card-del" aria-label="Delete task"><svg class="i"><use href="#i-trash"/></svg></button>
           </article>
           <article class="card" style="--c:var(--class-gov)">
+            <div class="chips"><span class="chip">AP Government &amp; Politics</span></div>
             <button class="check" aria-label="Mark complete"><svg class="i"><use href="#i-check"/></svg></button>
-            <div class="card-body">
-              <div class="chips"><span class="chip">AP Government &amp; Politics</span></div>
-              <p class="card-title">Read ch. 4 and outline Federalist 10</p>
-            </div>
+            <p class="card-title">Read ch. 4 and outline Federalist 10</p>
             <button class="card-del" aria-label="Delete task"><svg class="i"><use href="#i-trash"/></svg></button>
           </article>
           <article class="card" style="--c:var(--class-research)">
+            <div class="chips"><span class="chip">AP Capstone Research</span></div>
             <button class="check" aria-label="Mark complete"><svg class="i"><use href="#i-check"/></svg></button>
-            <div class="card-body">
-              <div class="chips"><span class="chip">AP Capstone Research</span></div>
-              <p class="card-title">Annotated bibliography, 5 more sources</p>
-            </div>
+            <p class="card-title">Annotated bibliography, 5 more sources</p>
             <button class="card-del" aria-label="Delete task"><svg class="i"><use href="#i-trash"/></svg></button>
           </article>
           <article class="card">
             <button class="check" aria-label="Mark complete"><svg class="i"><use href="#i-check"/></svg></button>
-            <div class="card-body">
-              <p class="card-title">Return library books</p>
-            </div>
+            <p class="card-title">Return library books</p>
             <button class="card-del" aria-label="Delete task"><svg class="i"><use href="#i-trash"/></svg></button>
-          </article>
-          <!-- drag overlay -->
-          <article class="card is-lifted" style="--c:var(--class-spex)">
-            <span class="check"></span>
-            <div class="card-body">
-              <div class="chips"><span class="chip">SPEX</span></div>
-              <p class="card-title">Reflection journal, week 9</p>
-            </div>
           </article>
           <div class="drop-hint"><svg class="i"><use href="#i-move"/></svg><span>Drop to move here. It will be due Thu 12 Nov.</span></div>
         </div>
         <button class="add-btn"><svg class="i"><use href="#i-plus"/></svg>Add task</button>
+        <!-- drag overlay: floats over the column's free space (the app portals it to <body>) -->
+        <article class="card is-lifted" style="--c:var(--class-spex)" aria-hidden="true">
+          <div class="chips"><span class="chip">SPEX</span></div>
+          <span class="check"></span>
+          <p class="card-title">Reflection journal, week 9</p>
+        </article>
       </section>
 
       <!-- 4 Subsequent School Day (empty) -->
       <section class="col">
-        <header class="col-head"><div><h3 class="col-title">Subsequent School Day</h3><p class="col-date">Fri 13 Nov</p></div><span class="col-count">0</span></header>
+        <header class="col-head"><div><h3 class="col-title">Subsequent School Day</h3><p class="col-date">Fri 13 Nov</p></div><span class="col-count is-zero">0</span></header>
         <div class="col-list">
           <div class="empty"><div><p>Nothing due Friday</p><p>Add a task or drag one here</p></div></div>
         </div>
@@ -733,50 +744,48 @@ code, .code { font-family: var(--font-code); font-size: 12.5px; background: var(
         <div class="col-list">
           <article class="card">
             <button class="check" aria-label="Mark complete"><svg class="i"><use href="#i-check"/></svg></button>
-            <div class="card-body">
-              <p class="card-title">Calc trick for limits, write it up</p>
-              <div class="card-meta"><span class="due"><button class="due-date"><svg class="i"><use href="#i-cal"/></svg>Fri 20 Nov</button><button class="due-clear" aria-label="Clear due date"><svg class="i"><use href="#i-x"/></svg></button></span></div>
-            </div>
+            <p class="card-title">Calc trick for limits, write it up</p>
+            <div class="card-meta"><span class="due"><button class="due-date"><svg class="i"><use href="#i-cal"/></svg>Fri 20 Nov</button><button class="due-clear" aria-label="Clear due date"><svg class="i"><use href="#i-x"/></svg></button></span></div>
             <button class="card-del" aria-label="Delete task"><svg class="i"><use href="#i-trash"/></svg></button>
           </article>
           <article class="card" style="--c:var(--class-research)">
+            <div class="chips"><span class="chip">AP Capstone Research</span></div>
             <button class="check" aria-label="Mark complete"><svg class="i"><use href="#i-check"/></svg></button>
-            <div class="card-body">
-              <div class="chips"><span class="chip">AP Capstone Research</span></div>
-              <p class="card-title">Transcribe interviews 3 and 4</p>
-              <div class="card-meta"><span class="due"><button class="due-date"><svg class="i"><use href="#i-cal"/></svg>Fri 4 Dec</button><button class="due-clear" aria-label="Clear due date"><svg class="i"><use href="#i-x"/></svg></button></span></div>
-            </div>
+            <p class="card-title">Transcribe interviews 3 and 4</p>
+            <div class="card-meta"><span class="due"><button class="due-date"><svg class="i"><use href="#i-cal"/></svg>Fri 4 Dec</button><button class="due-clear" aria-label="Clear due date"><svg class="i"><use href="#i-x"/></svg></button></span></div>
             <button class="card-del" aria-label="Delete task"><svg class="i"><use href="#i-trash"/></svg></button>
           </article>
           <article class="card" style="--c:var(--class-seng)">
+            <div class="chips"><span class="chip">Senior English</span></div>
             <button class="check" aria-label="Mark complete"><svg class="i"><use href="#i-check"/></svg></button>
-            <div class="card-body">
-              <div class="chips"><span class="chip">Senior English</span></div>
-              <p class="card-title">College essay, second draft</p>
-              <div class="card-meta"><span class="due is-unset"><button class="due-date"><svg class="i"><use href="#i-cal"/></svg>Set date</button></span></div>
-            </div>
+            <p class="card-title">College essay, second draft</p>
+            <div class="card-meta"><span class="due is-unset"><button class="due-date"><svg class="i"><use href="#i-cal"/></svg>Set date</button></span></div>
             <button class="card-del" aria-label="Delete task"><svg class="i"><use href="#i-trash"/></svg></button>
           </article>
           <article class="card is-done" style="--c:var(--class-ai-ml)">
+            <div class="chips"><span class="chip">AI &amp; Machine Learning</span></div>
             <button class="check is-on" aria-label="Mark incomplete"><svg class="i"><use href="#i-check"/></svg></button>
-            <div class="card-body">
-              <div class="chips"><span class="chip">AI &amp; Machine Learning</span></div>
-              <p class="card-title">Final project proposal</p>
-              <div class="card-meta"><span class="due"><button class="due-date"><svg class="i"><use href="#i-cal"/></svg>Tue 10 Nov</button></span></div>
-            </div>
+            <p class="card-title">Final project proposal</p>
+            <div class="card-meta"><span class="due"><button class="due-date"><svg class="i"><use href="#i-cal"/></svg>Tue 10 Nov</button></span></div>
             <button class="card-del" aria-label="Delete task"><svg class="i"><use href="#i-trash"/></svg></button>
           </article>
         </div>
         <button class="toggle-done is-open"><svg class="i"><use href="#i-chev-right"/></svg>Hide completed</button>
         <div class="add-field">
-          <input class="add-input" placeholder="Task title" value="" aria-label="New task title">
-          <p class="add-hint">Start with a class, like “Stats”, to label it. <span class="kbd">Enter</span> adds another, <span class="kbd">Esc</span> closes.</p>
+          <input class="add-input" placeholder="Title, e.g. Stats quiz 6.2" value="" aria-label="New task title">
         </div>
       </section>
 
     </div>
   </div>
-  <p class="note"><b>Notes.</b> Delete appears on hover (shown on the Calc test card, with its red hover). The checkbox sits on the title line. “Calc trick for limits” is stored as <code>\Calc trick for limits</code>: the backslash keeps it unlabelled and it sorts as unrecognised. The column count is active cards only. The dragged card's origin keeps a dashed slot so the column doesn't jump.</p>
+  <div class="notes">
+    <p class="note"><b>Cards.</b> The class chip sits on its own row across the top of the card; the checkbox and the title share the line below, and the title runs the full width of the card. Delete appears on hover at the right end of the chip row (shown on the Calc test card, with its red hover). On a card with no chip it sits in the top-right corner, and only the first line of the title steps around it.</p>
+    <p class="note"><b>Editing.</b> Clicking a title swaps it for a field set in exactly the same size and position, so the card doesn't grow or jump. Enter saves, Esc cancels.</p>
+    <p class="note"><b>Adding.</b> The add-task field has no helper text; the placeholder shows the one habit worth knowing (start with a class). Enter adds the task and opens a fresh field for the next one; Esc closes it.</p>
+    <p class="note"><b>Columns.</b> All five columns run the full height of the window. When a column has more cards than fit, its list scrolls inside the column and Add task stays in view. The count beside each title is active cards only.</p>
+    <p class="note"><b>Dragging.</b> The lifted card floats above the board while the target column shows where it will land and what its new date will be. The dashed outline left in Today / Due is the exact size of the card that left, so the column doesn't jump.</p>
+    <p class="note"><b>No label.</b> “Calc trick for limits” is stored as <code>\Calc trick for limits</code>: the backslash keeps it unlabelled, so it gets a gray edge and no chip, and in the three day columns it sorts with the unlabelled cards.</p>
+  </div>
 </section>
 
 <!-- ================================================================= HEADER -->
@@ -819,15 +828,15 @@ code, .code { font-family: var(--font-code); font-size: 12.5px; background: var(
           <svg class="i"><use href="#i-arrow"/></svg>
           <span class="result"><span class="chip" style="--c:var(--class-stats); --surface-card: var(--surface-sunken)">AP Statistics</span>worksheet 6.2</span>
         </div>
-        <p class="pop-p" style="margin-top:14px; color: var(--text-3); font-size: 12px;">Numbers are the order cards sort in Today / Due, Next School Day and Subsequent School Day.</p>
+        <p class="pop-p pop-quiet">Numbers are the order cards sort in Today / Due, Next School Day and Subsequent School Day.</p>
         <ol class="class-list">
           <li><span class="n">1</span><div><span class="chip" style="--c:var(--class-ai-ml)">AI &amp; Machine Learning</span><p class="aka"><span>Also </span>AI&amp;ML, AI &amp; ML, AI</p></div></li>
           <li><span class="n">2</span><div><span class="chip" style="--c:var(--class-calc-bc)">AP Calculus BC</span><p class="aka"><span>Also </span>Calculus BC, AP Calc BC, AP Calc, Calc BC, Calc</p></div></li>
           <li><span class="n">3</span><div><span class="chip" style="--c:var(--class-stats)">AP Statistics</span><p class="aka"><span>Also </span>Statistics, AP Stats, Stats</p></div></li>
           <li><span class="n">4</span><div><span class="chip" style="--c:var(--class-gov)">AP Government &amp; Politics</span><p class="aka"><span>Also </span>Government &amp; Politics, AP Gov, Gov</p></div></li>
           <li><span class="n">5</span><div><span class="chip" style="--c:var(--class-seng)">Senior English</span><p class="aka"><span>Also </span>Seng</p></div></li>
-          <li><span class="n">6</span><div><span class="chip" style="--c:var(--class-seminar)">Seminar</span><p class="aka"><span>Name only</span></p></div></li>
-          <li><span class="n">7</span><div><span class="chip" style="--c:var(--class-spex)">SPEX</span><p class="aka"><span>Name only</span></p></div></li>
+          <li><span class="n">6</span><div><span class="chip" style="--c:var(--class-seminar)">Seminar</span><p class="aka"><span>No short forms</span></p></div></li>
+          <li><span class="n">7</span><div><span class="chip" style="--c:var(--class-spex)">SPEX</span><p class="aka"><span>No short forms</span></p></div></li>
           <li><span class="n">8</span><div><span class="chip" style="--c:var(--class-research)">AP Capstone Research</span><p class="aka"><span>Also </span>Capstone Research, AP Research, Research</p></div></li>
         </ol>
         <div class="pop-rule"></div>
@@ -856,7 +865,7 @@ code, .code { font-family: var(--font-code); font-size: 12.5px; background: var(
       <p class="note">Calendar popover. The Copy link button after a click, for 2 seconds:</p>
       <div style="margin-top: 10px; display:flex; gap: 10px; align-items:center;">
         <button class="btn btn-sm btn-copied"><svg class="i"><use href="#i-check"/></svg>Copied!</button>
-        <span class="note" style="margin:0">plus an info toast, “Calendar link copied”</span>
+        <span class="note note-inline">plus an info toast, “Calendar link copied”</span>
       </div>
     </div>
 
@@ -949,7 +958,7 @@ code, .code { font-family: var(--font-code); font-size: 12.5px; background: var(
       <div class="brand"><span class="brand-name"><span class="brand-mark"></span>School Tasks</span><span class="brand-date">Wednesday 11 November</span></div>
       <div class="tools"><button class="tool"><svg class="i"><use href="#i-tag"/></svg>Classes</button><button class="tool"><svg class="i"><use href="#i-cal"/></svg>Calendar</button><button class="avatar-btn"><span class="avatar">S</span><svg class="i"><use href="#i-chev-down"/></svg></button></div>
     </header>
-    <div class="board">
+    <div class="board is-skeleton">
       <section class="col is-skeleton"><header class="col-head"><h3 class="col-title">Upcoming Tests</h3></header><div class="col-list"><div class="sk sk-card tall"></div><div class="sk sk-card"></div><div class="sk sk-card tall"></div></div></section>
       <section class="col col--today is-skeleton"><span class="ribbon"></span><header class="col-head"><div><h3 class="col-title">Today / Due</h3><div class="sk sk-line" style="width:76px;margin-top:8px"></div></div></header><div class="col-list"><div class="sk sk-card"></div><div class="sk sk-card"></div><div class="sk sk-card"></div><div class="sk sk-card"></div></div></section>
       <section class="col is-skeleton"><header class="col-head"><div><h3 class="col-title">Next School Day</h3><div class="sk sk-line" style="width:70px;margin-top:8px"></div></div></header><div class="col-list"><div class="sk sk-card"></div><div class="sk sk-card"></div></div></section>
@@ -989,18 +998,19 @@ code, .code { font-family: var(--font-code); font-size: 12.5px; background: var(
           <section class="col">
             <header class="col-head"><h3 class="col-title">Upcoming Tests</h3></header>
             <div class="col-list">
-              <article class="card" style="--c:var(--class-stats)"><button class="check"><svg class="i"><use href="#i-check"/></svg></button><div class="card-body"><div class="chips"><span class="chip">AP Statistics</span></div><p class="card-title">Chapter 6 quiz: sampling distributions</p><div class="card-meta"><span class="due"><button class="due-date"><svg class="i"><use href="#i-cal"/></svg>Mon 16 Nov</button><button class="due-clear"><svg class="i"><use href="#i-x"/></svg></button></span></div></div><button class="card-del"><svg class="i"><use href="#i-trash"/></svg></button></article>
-              <article class="card" style="--c:var(--class-calc-bc)"><button class="check"><svg class="i"><use href="#i-check"/></svg></button><div class="card-body"><div class="chips"><span class="chip">AP Calculus BC</span></div><p class="card-title">Unit 3 test: derivatives and related rates</p><div class="card-meta"><span class="due"><button class="due-date"><svg class="i"><use href="#i-cal"/></svg>Fri 20 Nov</button><button class="due-clear"><svg class="i"><use href="#i-x"/></svg></button></span></div></div><button class="card-del"><svg class="i"><use href="#i-trash"/></svg></button></article>
+              <article class="card" style="--c:var(--class-stats)"><div class="chips"><span class="chip">AP Statistics</span></div><button class="check"><svg class="i"><use href="#i-check"/></svg></button><p class="card-title">Chapter 6 quiz: sampling distributions</p><div class="card-meta"><span class="due"><button class="due-date"><svg class="i"><use href="#i-cal"/></svg>Mon 16 Nov</button><button class="due-clear"><svg class="i"><use href="#i-x"/></svg></button></span></div><button class="card-del"><svg class="i"><use href="#i-trash"/></svg></button></article>
+              <article class="card" style="--c:var(--class-calc-bc)"><div class="chips"><span class="chip">AP Calculus BC</span></div><button class="check"><svg class="i"><use href="#i-check"/></svg></button><p class="card-title">Unit 3 test: derivatives and related rates</p><div class="card-meta"><span class="due"><button class="due-date"><svg class="i"><use href="#i-cal"/></svg>Fri 20 Nov</button><button class="due-clear"><svg class="i"><use href="#i-x"/></svg></button></span></div><button class="card-del"><svg class="i"><use href="#i-trash"/></svg></button></article>
             </div>
+            <button class="add-btn"><svg class="i"><use href="#i-plus"/></svg>Add task</button>
           </section>
           <section class="col col--today">
             <span class="ribbon" aria-hidden="true"></span>
             <header class="col-head"><div><h3 class="col-title">Today / Due</h3><p class="col-date">Wed 11 Nov</p></div></header>
             <div class="col-list">
-              <article class="card" style="--c:var(--class-ai-ml)"><button class="check"><svg class="i"><use href="#i-check"/></svg></button><div class="card-body"><div class="chips"><span class="chip">AI &amp; Machine Learning</span></div><p class="card-title">Lab 4 notebook: gradient descent</p></div><button class="card-del"><svg class="i"><use href="#i-trash"/></svg></button></article>
-              <article class="card" style="--c:var(--class-calc-bc)"><button class="check"><svg class="i"><use href="#i-check"/></svg></button><div class="card-body"><div class="chips"><span class="chip">AP Calculus BC</span></div><p class="card-title">Problem set 3.4, odd numbers</p></div><button class="card-del"><svg class="i"><use href="#i-trash"/></svg></button></article>
-              <article class="card" style="--c:var(--class-seng)"><button class="check"><svg class="i"><use href="#i-check"/></svg></button><div class="card-body"><div class="chips"><span class="chip">Senior English</span><span class="badge-overdue"><svg class="i"><use href="#i-clock"/></svg>Overdue</span></div><p class="card-title">Gatsby ch. 5 annotations</p></div><button class="card-del"><svg class="i"><use href="#i-trash"/></svg></button></article>
-              <article class="card" style="--c:var(--class-seminar)"><button class="check"><svg class="i"><use href="#i-check"/></svg></button><div class="card-body"><div class="chips"><span class="chip">Seminar</span></div><p class="card-title">Reading response, Sandel ch. 2</p></div><button class="card-del"><svg class="i"><use href="#i-trash"/></svg></button></article>
+              <article class="card" style="--c:var(--class-ai-ml)"><div class="chips"><span class="chip">AI &amp; Machine Learning</span></div><button class="check"><svg class="i"><use href="#i-check"/></svg></button><p class="card-title">Lab 4 notebook: gradient descent</p><button class="card-del"><svg class="i"><use href="#i-trash"/></svg></button></article>
+              <article class="card" style="--c:var(--class-calc-bc)"><div class="chips"><span class="chip">AP Calculus BC</span></div><button class="check"><svg class="i"><use href="#i-check"/></svg></button><p class="card-title">Problem set 3.4, odd numbers</p><button class="card-del"><svg class="i"><use href="#i-trash"/></svg></button></article>
+              <article class="card" style="--c:var(--class-seng)"><div class="chips"><span class="chip">Senior English</span><span class="badge-overdue"><svg class="i"><use href="#i-clock"/></svg>Overdue</span></div><button class="check"><svg class="i"><use href="#i-check"/></svg></button><p class="card-title">Gatsby ch. 5 annotations</p><button class="card-del"><svg class="i"><use href="#i-trash"/></svg></button></article>
+              <article class="card" style="--c:var(--class-seminar)"><div class="chips"><span class="chip">Seminar</span></div><button class="check"><svg class="i"><use href="#i-check"/></svg></button><p class="card-title">Reading response, Sandel ch. 2</p><button class="card-del"><svg class="i"><use href="#i-trash"/></svg></button></article>
             </div>
             <button class="toggle-done"><svg class="i"><use href="#i-chev-right"/></svg>Show completed (2)</button>
             <button class="add-btn"><svg class="i"><use href="#i-plus"/></svg>Add task</button>
@@ -1008,9 +1018,10 @@ code, .code { font-family: var(--font-code); font-size: 12.5px; background: var(
           <section class="col">
             <header class="col-head"><div><h3 class="col-title">Next School Day</h3><p class="col-date">Thu 12 Nov</p></div></header>
             <div class="col-list">
-              <article class="card" style="--c:var(--class-stats)"><button class="check"><svg class="i"><use href="#i-check"/></svg></button><div class="card-body"><div class="chips"><span class="chip">AP Statistics</span></div><p class="card-title">Homework 6.2</p></div><button class="card-del"><svg class="i"><use href="#i-trash"/></svg></button></article>
-              <article class="card" style="--c:var(--class-gov)"><button class="check"><svg class="i"><use href="#i-check"/></svg></button><div class="card-body"><div class="chips"><span class="chip">AP Government &amp; Politics</span></div><p class="card-title">Read ch. 4 and outline Federalist 10</p></div><button class="card-del"><svg class="i"><use href="#i-trash"/></svg></button></article>
+              <article class="card" style="--c:var(--class-stats)"><div class="chips"><span class="chip">AP Statistics</span></div><button class="check"><svg class="i"><use href="#i-check"/></svg></button><p class="card-title">Homework 6.2</p><button class="card-del"><svg class="i"><use href="#i-trash"/></svg></button></article>
+              <article class="card" style="--c:var(--class-gov)"><div class="chips"><span class="chip">AP Government &amp; Politics</span></div><button class="check"><svg class="i"><use href="#i-check"/></svg></button><p class="card-title">Read ch. 4 and outline Federalist 10</p><button class="card-del"><svg class="i"><use href="#i-trash"/></svg></button></article>
             </div>
+            <button class="add-btn"><svg class="i"><use href="#i-plus"/></svg>Add task</button>
           </section>
           <section class="col">
             <header class="col-head"><div><h3 class="col-title">Subsequent School Day</h3><p class="col-date">Fri 13 Nov</p></div></header>
@@ -1020,8 +1031,9 @@ code, .code { font-family: var(--font-code); font-size: 12.5px; background: var(
           <section class="col">
             <header class="col-head"><h3 class="col-title">Later</h3></header>
             <div class="col-list">
-              <article class="card" style="--c:var(--class-research)"><button class="check"><svg class="i"><use href="#i-check"/></svg></button><div class="card-body"><div class="chips"><span class="chip">AP Capstone Research</span></div><p class="card-title">Transcribe interviews 3 and 4</p><div class="card-meta"><span class="due"><button class="due-date"><svg class="i"><use href="#i-cal"/></svg>Fri 4 Dec</button><button class="due-clear"><svg class="i"><use href="#i-x"/></svg></button></span></div></div><button class="card-del"><svg class="i"><use href="#i-trash"/></svg></button></article>
+              <article class="card" style="--c:var(--class-research)"><div class="chips"><span class="chip">AP Capstone Research</span></div><button class="check"><svg class="i"><use href="#i-check"/></svg></button><p class="card-title">Transcribe interviews 3 and 4</p><div class="card-meta"><span class="due"><button class="due-date"><svg class="i"><use href="#i-cal"/></svg>Fri 4 Dec</button><button class="due-clear"><svg class="i"><use href="#i-x"/></svg></button></span></div><button class="card-del"><svg class="i"><use href="#i-trash"/></svg></button></article>
             </div>
+            <button class="add-btn"><svg class="i"><use href="#i-plus"/></svg>Add task</button>
           </section>
         </div>
       </div>
@@ -1038,15 +1050,15 @@ code, .code { font-family: var(--font-code); font-size: 12.5px; background: var(
             <button class="avatar-btn" aria-label="Account" style="padding-right:3px"><span class="avatar">S</span></button>
           </div>
         </header>
-        <nav class="tabs"><button class="tab">Tests <b>4</b></button><button class="tab is-on">Today <b>4</b></button><button class="tab">Next <b>4</b></button><button class="tab">Subsequent <b>0</b></button></nav>
+        <nav class="tabs" aria-label="Columns"><button class="tab">Tests <b>4</b></button><button class="tab is-on">Today <b>4</b></button><button class="tab">Next <b>4</b></button><button class="tab">Subsequent <b>0</b></button><button class="tab">Later <b>3</b></button></nav>
         <div class="sheet-scrim"></div>
         <div class="sheet" id="m-sheet"><div class="grabber"></div></div>
       </div>
     </div>
 
-    <div style="max-width: 320px;">
-      <p class="note" style="margin-top:0"><b>Touch.</b> No hover on phones, so the trash icon stays visible in a quiet gray. Drag starts on a long press (250ms) so the column still scrolls sideways under your thumb.</p>
-      <p class="note"><b>Tabs.</b> Tap a tab to snap to that column (try it on the left phone). The active tab follows when you swipe. Short tab names are for the strip only; the column header keeps the full name.</p>
+    <div class="notes" style="flex: 1 1 360px; max-width: 520px;">
+      <p class="note"><b>Touch.</b> No hover on phones, so the trash icon stays visible in a quiet gray. Drag starts on a long press (250ms) so the column still scrolls sideways under your thumb.</p>
+      <p class="note"><b>Tabs.</b> Tap a tab to snap to that column (try it on the left phone). The active tab follows when you swipe and the strip scrolls to keep it fully in view. When more tabs sit off the edge, the strip fades out on that side to show it scrolls. Short tab names are for the strip only; the column header keeps the full name.</p>
       <p class="note"><b>Sheets.</b> Classes, Calendar and the account menu open as a bottom sheet with a grabber, over a dimmed board. Swipe down or tap outside to close.</p>
       <p class="note"><b>Inputs.</b> Add-task and title inputs use 16px on phones so iOS doesn't zoom.</p>
     </div>
@@ -1065,7 +1077,7 @@ code, .code { font-family: var(--font-code); font-size: 12.5px; background: var(
     <div class="tok"><span class="tok-sw" style="background:var(--surface-sunken)"></span><div><b>Sunken</b><code>--surface-sunken</code><small>#141210, inputs, code</small></div></div>
     <div class="tok"><span class="tok-sw" style="background:var(--surface-page)"></span><div><b>Page</b><code>--surface-page</code><small>#1a1816, with dot grid #2c2925</small></div></div>
     <div class="tok"><span class="tok-sw" style="background:var(--surface-column)"></span><div><b>Column</b><code>--surface-column</code><small>#1f1d1a</small></div></div>
-    <div class="tok"><span class="tok-sw" style="background:var(--surface-today)"></span><div><b>Today column</b><code>--surface-today</code><small>#24211e</small></div></div>
+    <div class="tok"><span class="tok-sw" style="background:var(--surface-today)"></span><div><b>Today column</b><code>--surface-today</code><small>#282521, edge paper at 30%; its cards #2f2c27</small></div></div>
     <div class="tok"><span class="tok-sw" style="background:var(--surface-card)"></span><div><b>Card</b><code>--surface-card</code><small>#2a2723, hover #302d28</small></div></div>
     <div class="tok"><span class="tok-sw" style="background:var(--surface-overlay)"></span><div><b>Overlay</b><code>--surface-overlay</code><small>#2b2824, popovers, toasts</small></div></div>
     <div class="tok"><span class="tok-sw" style="background:var(--surface-raised)"></span><div><b>Raised</b><code>--surface-raised</code><small>#34302b, badges, avatar</small></div></div>
@@ -1112,13 +1124,13 @@ code, .code { font-family: var(--font-code); font-size: 12.5px; background: var(
     <div><small>Display, Fraunces 500, 36px<br><code>--text-2xl</code> template headings</small><span style="font-family:var(--font-display);font-size:36px;font-weight:500;line-height:1.1">Upcoming Tests</span></div>
     <div><small>Display, Fraunces 600, 30px<br><code>--text-xl</code> brand on sign in</small><span style="font-family:var(--font-display);font-size:30px;font-weight:600;line-height:1.1">School Tasks</span></div>
     <div><small>Display, Fraunces 500, 19px<br><code>--text-lg</code> column + popover titles</small><span style="font-family:var(--font-display);font-size:19px;font-weight:500">Next School Day</span></div>
-    <div><small>UI, Atkinson Next 400, 16px<br><code>--text-md</code> login + phone inputs</small><span style="font-size:16px">student@example.com</span></div>
-    <div><small>UI, Atkinson Next 400 / 500 / 600, 14px<br><code>--text-base</code> card titles, buttons</small><span style="font-size:14px">Annotated bibliography, 5 more sources</span></div>
-    <div><small>UI, Atkinson Next 400 / 500, 12–13px<br><code>--text-sm</code> dates, meta, hints</small><span style="font-size:13px;color:var(--text-2)">Thu 12 Nov</span></div>
-    <div><small>UI, Atkinson Next 600 / 700, 11px<br><code>--text-xs</code> chips, badges</small><span><span class="chip" style="--c:var(--class-gov); --surface-card: var(--surface-column)">AP Government &amp; Politics</span> <span class="badge-overdue"><svg class="i"><use href="#i-clock"/></svg>Overdue</span></span></div>
+    <div><small>UI, Source Sans 3 400, 16px<br><code>--text-md</code> login + phone inputs</small><span style="font-size:16px">student@example.com</span></div>
+    <div><small>UI, Source Sans 3 400 / 500 / 600, 15px<br><code>--text-base</code> card titles, buttons</small><span style="font-size:15px">Annotated bibliography, 5 more sources</span></div>
+    <div><small>UI, Source Sans 3 400 / 500 / 600, 13px<br><code>--text-sm</code> dates, counts, meta (the floor)</small><span style="font-size:13px;color:var(--text-2)">Thu 12 Nov &nbsp; Fri 20 Nov &nbsp; 0 &nbsp; 10</span></div>
+    <div><small>UI, Source Sans 3 600 / 700, 12px<br><code>--text-xs</code> chips, badges</small><span><span class="chip" style="--c:var(--class-gov); --surface-card: var(--surface-column)">AP Government &amp; Politics</span> <span class="badge-overdue"><svg class="i"><use href="#i-clock"/></svg>Overdue</span></span></div>
     <div><small>Code, Atkinson Mono 400, 12–12.5px<br><code>--font-code</code> URL field, code</small><span><code>\Calc trick</code></span></div>
   </div>
-  <p class="note">Line height 1.45 for body, 1.25 for display. Fontsource packages: <code>@fontsource-variable/fraunces</code>, <code>@fontsource-variable/atkinson-hyperlegible-next</code>, <code>@fontsource/atkinson-hyperlegible-mono</code> (400 only).</p>
+  <p class="note">Line height 1.45 for body, 1.25 for display. Nothing a user reads on the board is smaller than 13px, except chips and badges at 12px semibold. Source Sans 3 replaces Atkinson Hyperlegible Next because Atkinson's zero is always slashed (it has no plain-zero alternate), which made every date read like code; Source Sans 3 has a plain zero and tabular figures by default. Fontsource packages: <code>@fontsource-variable/fraunces</code>, <code>@fontsource-variable/source-sans-3</code>, <code>@fontsource/atkinson-hyperlegible-mono</code> (400 only; its slashed zero is fine for code and the calendar link).</p>
 
   <h3 class="tok-h">Radii, shadows, spacing, motion</h3>
   <div class="row" style="gap: 20px;">
@@ -1167,7 +1179,6 @@ code, .code { font-family: var(--font-code); font-size: 12.5px; background: var(
   var app = document.getElementById('live-app');
   var open = null, openEl = null;
   var sources = { classes: 'tpl-classes', calendar: 'tpl-calendar', account: 'tpl-account' };
-  var right = { classes: 150, calendar: 64, account: 20 };
   function close() {
     if (openEl) openEl.remove();
     topbar.querySelectorAll('[data-pop]').forEach(function (b) { b.classList.remove('is-open'); b.setAttribute('aria-expanded', 'false'); });
@@ -1181,11 +1192,12 @@ code, .code { font-family: var(--font-code); font-size: 12.5px; background: var(
       if (was === key) return;
       var wrap = document.createElement('div');
       wrap.className = 'anchor';
-      wrap.style.right = right[key] + 'px';
+      // right edge of the popover lines up with the right edge of its button
+      wrap.style.right = Math.round(app.getBoundingClientRect().right - btn.getBoundingClientRect().right) + 'px';
       wrap.style.top = '56px';
       var node = document.getElementById(sources[key]).cloneNode(true);
       node.removeAttribute('id');
-      if (key === 'classes') { node.style.maxHeight = '70vh'; node.style.overflowY = 'auto'; }
+      if (key === 'classes') { node.style.maxHeight = 'min(70vh, ' + (app.clientHeight - 72) + 'px)'; node.style.overflowY = 'auto'; }  // stays inside the frame
       wrap.appendChild(node);
       wrap.addEventListener('click', function (ev) { ev.stopPropagation(); });
       app.appendChild(wrap);
@@ -1213,21 +1225,50 @@ code, .code { font-family: var(--font-code); font-size: 12.5px; background: var(
 
   // Phone: tabs snap to columns; swiping updates the active tab.
   var cols = document.getElementById('m-cols');
-  var tabs = document.querySelectorAll('#m-tabs .tab');
+  var strip = document.getElementById('m-tabs');
+  var tabs = strip.querySelectorAll('.tab');
   var colEls = cols.querySelectorAll('.col');
-  function setTab(i) { tabs.forEach(function (t, j) { t.classList.toggle('is-on', i === j); }); }
+  var current = -1;
+
+  // Edge fade on any tab strip that has tabs hidden past an edge.
+  function updateFade(nav) {
+    var max = nav.scrollWidth - nav.clientWidth;
+    nav.classList.toggle('can-left', nav.scrollLeft > 1);
+    nav.classList.toggle('can-right', nav.scrollLeft < max - 1);
+  }
+  document.querySelectorAll('.tabs').forEach(function (nav) {
+    updateFade(nav);
+    nav.addEventListener('scroll', function () { updateFade(nav); }, { passive: true });
+  });
+
+  // Keep the active tab fully visible, clear of the edge fade.
+  function reveal(tab, smooth) {
+    var pad = 48;
+    var left = tab.offsetLeft, right = left + tab.offsetWidth;
+    var target = strip.scrollLeft;
+    if (left - pad < strip.scrollLeft) target = left - pad;
+    else if (right + pad > strip.scrollLeft + strip.clientWidth) target = right + pad - strip.clientWidth;
+    target = Math.max(0, Math.min(target, strip.scrollWidth - strip.clientWidth));
+    if (target !== strip.scrollLeft) strip.scrollTo({ left: target, behavior: smooth ? 'smooth' : 'auto' });
+  }
+  function setTab(i, smooth) {
+    if (i === current) return;
+    current = i;
+    tabs.forEach(function (t, j) { t.classList.toggle('is-on', i === j); t.setAttribute('aria-current', i === j ? 'true' : 'false'); });
+    reveal(tabs[i], smooth);
+  }
   tabs.forEach(function (t) {
     t.addEventListener('click', function () {
       var i = +t.dataset.to;
       cols.scrollTo({ left: colEls[i].offsetLeft - 16, behavior: 'smooth' });
-      setTab(i);
+      setTab(i, true);
     });
   });
   cols.addEventListener('scroll', function () {
     var i = Math.round(cols.scrollLeft / (colEls[0].offsetWidth + 10));
-    setTab(Math.min(i, colEls.length - 1));
+    setTab(Math.min(i, colEls.length - 1), true);
   }, { passive: true });
-  requestAnimationFrame(function () { cols.scrollLeft = colEls[1].offsetLeft - 16; });
+  requestAnimationFrame(function () { cols.scrollLeft = colEls[1].offsetLeft - 16; setTab(1, false); });
 
   // Phone sheet: reuse the Classes popover content.
   var sheet = document.getElementById('m-sheet');
