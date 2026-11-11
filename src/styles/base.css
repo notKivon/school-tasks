@@ -1,0 +1,62 @@
+/* Base element styles (design/template.html "BASE" + app shell page). */
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    color-scheme: dark;
+  }
+
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+
+  /* The page: warm graphite dot-grid journal page */
+  body {
+    margin: 0;
+    background-color: var(--surface-page);
+    background-image: radial-gradient(circle at 1px 1px, var(--dot-grid) 1px, transparent 1.4px);
+    background-size: var(--dot-grid-size) var(--dot-grid-size);
+    background-position: 10px 10px;
+    color: var(--text-1);
+    font: var(--weight-regular) var(--text-base) / var(--leading-body) var(--font-ui);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Thin, quiet scrollbars everywhere (template .col-list) */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-2) transparent;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+
+  :focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+
+  ::selection {
+    background: rgb(241 233 218 / 0.24);
+    color: var(--text-1);
+  }
+
+  ::placeholder {
+    color: var(--text-3);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

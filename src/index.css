@@ -1,18 +1,244 @@
-@import "tailwindcss";
+/* =====================================================================
+   SCHOOL TASKS DESIGN SYSTEM  ("night-desk planner")
+   Source of truth: design/template.html. Values here are ported 1:1.
 
+   Every token exists twice:
+     - raw CSS variable with the template's name, e.g. var(--surface-card)
+     - Tailwind utility (mapped with @theme inline, so it reads the raw var
+       live: overriding --surface-card on a parent re-tints bg-surface-card)
+
+   COLOR UTILITIES   (any color utility: bg-, text-, border-, ring-, fill-, /50 opacity)
+     surfaces  bg-surface-{page,sunken,column,today,today-card,today-card-hover,
+                           card,card-hover,raised,overlay,scrim}   bg-dot-grid
+     text      text-text-{1,2,3,4}            (text-4 = disabled/decorative only)
+     lines     border-line-{1,2,3}  border-line-today
+     accent    bg-accent  bg-accent-hover  text-accent-ink  bg-accent-soft
+               border-accent-line   (the accent is the paper, #f1e9da)
+     classes   text-class-{ai-ml,calc-bc,reserved-3,stats,gov,seng,seminar,spex,
+                           research}   bg-label-none   (#6a645a unlabelled)
+     semantic  danger  danger-ink  success  info  warning   (e.g. text-danger)
+   TYPE
+     font-display (Fraunces)  font-ui (Source Sans 3, also the default sans)
+     font-code (Atkinson Hyperlegible Mono)
+     text-xs 12  text-sm 13  text-base 15  text-md 16  text-lg 19  text-xl 30
+     text-2xl 36   (template scale; Tailwind's default sizes are replaced)
+     leading-tight 1.25  leading-body 1.45
+     font-regular/normal 400  font-medium 500  font-semibold 600  font-bold 700
+   SHAPE
+     rounded-{chip 5, control 8, card 10, popover 14, column 16, sheet 20, pill}
+     shadow-card  shadow-lifted  shadow-pop
+     focus-visible:focus-ring  (use on anything that also has a shadow-* utility,
+                                which would otherwise override the base ring)
+     spacing: Tailwind's 4px scale already equals --space-N (p-3 = 12px)
+     w-column / min-w-column = --column-width 264px
+   MOTION
+     ease-out  ease-in-out  ease-lift
+     duration-(--dur-fast) 120ms  duration-(--dur-base) 200ms  duration-(--dur-slow) 700ms
+     animate-shimmer
+
+   COMPONENT CLASSES  (src/styles/components.css, template names)
+     .i                    svg icon base (use <Icon name="..." />, src/components/Icon.jsx)
+     .chip                 class chip; color = --c, set inline (style={{ '--c': cls.color }})
+                           on the chip or inherited from the card that sets it
+                           (tints from --surface-card; inside .pop/.menu it tints
+                           from --surface-overlay automatically)
+     .badge-overdue        solid danger badge (put <Icon name="clock" /> inside)
+     .btn + .btn-primary | .btn-secondary | .btn-quiet   (+ .btn-sm, .btn-copied)
+     .tool                 header text button; .tool.is-icon = 36px icon button;
+                           .is-open = pressed/open state
+     .field > span + .input + .field-hint   labelled text input
+                           (.field.is-invalid or aria-invalid="true" = error)
+     .url                  read-only code-font field (calendar link)
+     .pop  .pop-title .pop-lede .pop-rule .pop-h .pop-p .pop-quiet .pop-foot
+     .menu .menu-sep .menu-item (small = second line)
+     .sheet-scrim .sheet .grabber   phone bottom sheet (position: fixed)
+     .brand-mark           paper bookmark glyph (header, sign in, install)
+     code, kbd, .code      inline code
+     .sk + .sk-card | .sk-line   skeleton shimmer
+   ===================================================================== */
+
+@import "tailwindcss";
+@import "./styles/fonts.css";
+@import "./styles/base.css";
+@import "./styles/components.css";
+
+/* ---------- Raw tokens (template names) ---------- */
 :root {
   color-scheme: dark;
+
+  /* Surfaces, darkest to lightest */
+  --surface-page:     #1a1816;  /* app background (dot-grid journal page) */
+  --surface-sunken:   #141210;  /* inputs, code, URL field */
+  --surface-column:   #1f1d1a;  /* column panel */
+  --surface-today:    #282521;  /* Today / Due column, clearly lifted */
+  --surface-today-card:       #2f2c27;  /* cards in Today / Due */
+  --surface-today-card-hover: #34312b;
+  --surface-card:     #2a2723;  /* card at rest */
+  --surface-card-hover: #302d28; /* card hover */
+  --surface-raised:   #34302b;  /* date badge, avatar, skeleton highlight */
+  --surface-overlay:  #2b2824;  /* popovers, menus, toasts, sheets */
+  --surface-scrim:    rgb(10 9 8 / 0.62);
+  --dot-grid:         #2c2925;  /* dots on the page background */
+
+  /* Text. 1-3 pass WCAG AA on page, column, Today, cards and card hover.
+     Text-3 never on raised fills or a hovered Today card. Text-4 decorative/disabled only. */
+  --text-1: #efe8db;  /* primary, paper white */
+  --text-2: #b9b1a3;  /* secondary */
+  --text-3: #9b9386;  /* muted: meta, hints, counts */
+  --text-4: #615b52;  /* disabled, strike-through rule */
+
+  /* Lines */
+  --line-1: #33302b;  /* hairline: card + column edges */
+  --line-2: #48433c;  /* stronger: inputs, dashed placeholders */
+  --line-3: #615b52;  /* hover borders, checkbox rest */
+  --line-today: rgb(241 233 218 / 0.3);  /* Today / Due column edge */
+
+  /* Accent: the paper itself, so it never competes with a class color */
+  --accent:       #f1e9da;
+  --accent-hover: #fff8ec;
+  --accent-ink:   #1b1915;  /* text on accent fills */
+  --accent-soft:  rgb(241 233 218 / 0.08);
+  --accent-line:  rgb(241 233 218 / 0.38);
+  --focus-ring:   0 0 0 2px var(--surface-page), 0 0 0 4px rgb(241 233 218 / 0.6);
+
+  /* Class colors (priority order). Cool: 1-4. Warm: 5-9. Seminar = SPEX.
+     Mirrors CLASSES[].color in src/lib/labels.js (the app reads colors from there). */
+  --class-ai-ml:      #a99bff;  /* 1 AI & Machine Learning    lavender   */
+  --class-calc-bc:    #6fa8ff;  /* 2 AP Calculus BC           cornflower */
+  --class-reserved-3: #4fd1d9;  /* 3 reserved, unnamed        aqua       */
+  --class-stats:      #86d07a;  /* 4 AP Statistics            leaf       */
+  --class-gov:        #ff8270;  /* 5 AP Government & Politics coral      */
+  --class-seng:       #ffa65a;  /* 6 Senior English           tangerine  */
+  --class-seminar:    #efc94c;  /* 7 Seminar                  marigold   */
+  --class-spex:       var(--class-seminar); /* 8 SPEX shares Seminar's marigold */
+  --class-research:   #f383b8;  /* 9 AP Capstone Research     rose       */
+  --label-none:       #6a645a;  /* unlabelled, escaped and completed cards */
+  --chip-tint:        16%;      /* chip bg = class color mixed into the surface */
+
+  /* Semantic */
+  --danger:     #ff5f56;  /* overdue badge, delete hover, error */
+  --danger-ink: #2a0d0b;  /* text on solid danger */
+  --success:    #6fd6a8;
+  --info:       #9fb7e0;
+  --warning:    #f2b45a;  /* offline */
+
+  /* Weights */
+  --weight-regular:  400;
+  --weight-medium:   500;
+  --weight-semibold: 600;
+  --weight-bold:     700;
+
+  /* Spacing rhythm (4px base) */
+  --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px;
+  --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-12: 48px;
+  --dot-grid-size: 20px;
+  --column-width: 264px;  /* desktop min column width */
+
+  /* Motion durations */
+  --dur-fast: 120ms;  /* hover, press */
+  --dur-base: 200ms;  /* popover open, toggles */
+  --dur-slow: 700ms;  /* completed card collapse in Today / Due */
 }
 
-html,
-body,
-#root {
-  min-height: 100%;
+/* ---------- Tailwind theme ----------
+   Names that are already Tailwind namespaces (--font-*, --text-* sizes,
+   --leading-*, --radius-*, --shadow-*, --ease-*) are declared here directly,
+   so the raw variable keeps the template name AND gets a utility.
+   `static` = always emit these vars, so var(--radius-column) etc. work in
+   inline styles even when no utility uses them. */
+@theme static {
+  --font-display: "Fraunces", "Iowan Old Style", Georgia, serif;
+  --font-ui:      "Source Sans 3", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-code:    "Atkinson Hyperlegible Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-sans: var(--font-ui);
+  --font-mono: var(--font-code);
+  --font-weight-regular: 400;
+
+  --text-*: initial;
+  --text-xs:   12px;  /* chips, badges (semibold/bold) */
+  --text-sm:   13px;  /* meta, counts, dates: the floor for anything read on the board */
+  --text-base: 15px;  /* card titles, body, buttons */
+  --text-md:   16px;  /* inputs on phone (prevents iOS zoom), login fields */
+  --text-lg:   19px;  /* column titles, popover titles (display) */
+  --text-xl:   30px;  /* brand on sign in */
+  --text-2xl:  36px;  /* template section headings only */
+  --leading-tight: 1.25;
+  --leading-body:  1.45;
+
+  --radius-chip:    5px;
+  --radius-control: 8px;
+  --radius-card:    10px;
+  --radius-popover: 14px;
+  --radius-column:  16px;
+  --radius-sheet:   20px;
+  --radius-pill:    999px;
+
+  --shadow-card:   0 1px 0 rgb(255 255 255 / 0.03) inset, 0 1px 2px rgb(0 0 0 / 0.35);
+  --shadow-lifted: 0 22px 44px -14px rgb(0 0 0 / 0.75), 0 6px 14px rgb(0 0 0 / 0.4);
+  --shadow-pop:    0 24px 60px -18px rgb(0 0 0 / 0.8), 0 2px 8px rgb(0 0 0 / 0.35);
+
+  --ease-out:    cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-lift:   cubic-bezier(0.34, 1.4, 0.64, 1); /* card pick-up */
+
+  --animate-shimmer: shimmer 1.6s var(--ease-in-out) infinite; /* keyframes in components.css */
 }
 
-body {
-  margin: 0;
-  background-color: #0f172a;
-  color: #e2e8f0;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+/* Colors + sizes that live under template names in :root, exposed as
+   utilities by reference (inline = utilities read the raw var directly). */
+@theme inline {
+  --color-surface-page: var(--surface-page);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-surface-column: var(--surface-column);
+  --color-surface-today: var(--surface-today);
+  --color-surface-today-card: var(--surface-today-card);
+  --color-surface-today-card-hover: var(--surface-today-card-hover);
+  --color-surface-card: var(--surface-card);
+  --color-surface-card-hover: var(--surface-card-hover);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-overlay: var(--surface-overlay);
+  --color-surface-scrim: var(--surface-scrim);
+  --color-dot-grid: var(--dot-grid);
+
+  --color-text-1: var(--text-1);
+  --color-text-2: var(--text-2);
+  --color-text-3: var(--text-3);
+  --color-text-4: var(--text-4);
+
+  --color-line-1: var(--line-1);
+  --color-line-2: var(--line-2);
+  --color-line-3: var(--line-3);
+  --color-line-today: var(--line-today);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-line: var(--accent-line);
+
+  --color-class-ai-ml: var(--class-ai-ml);
+  --color-class-calc-bc: var(--class-calc-bc);
+  --color-class-reserved-3: var(--class-reserved-3);
+  --color-class-stats: var(--class-stats);
+  --color-class-gov: var(--class-gov);
+  --color-class-seng: var(--class-seng);
+  --color-class-seminar: var(--class-seminar);
+  --color-class-spex: var(--class-spex);
+  --color-class-research: var(--class-research);
+  --color-label-none: var(--label-none);
+
+  --color-danger: var(--danger);
+  --color-danger-ink: var(--danger-ink);
+  --color-success: var(--success);
+  --color-info: var(--info);
+  --color-warning: var(--warning);
+
+  --spacing-column: var(--column-width);
+}
+
+/* Focus ring as a utility, for elements whose shadow-* utility would
+   otherwise override the base :focus-visible ring. */
+@utility focus-ring {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }

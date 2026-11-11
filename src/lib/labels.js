@@ -6,7 +6,7 @@
 // Cool colors: AI & Machine Learning, AP Calculus BC, (reserved), AP Statistics.
 // Warm colors: AP Government & Politics, Senior English, Seminar, SPEX,
 // AP Capstone Research.
-// Seminar and SPEX deliberately share amber — they're told apart by the chip
+// Seminar and SPEX deliberately share marigold — they're told apart by the chip
 // text, not the color, so colors here are not unique per class.
 //
 // Slot 3 is an intentionally unnamed placeholder: it holds a priority position
@@ -19,47 +19,51 @@
 // "Capstone Research"), and spacing variants. Matching is case-insensitive
 // throughout, so a name only needs one casing here ("SPEX" catches "spex").
 
+// Colors mirror the --class-* tokens in src/index.css (design/template.html).
 export const CLASSES = [
   {
     name: 'AI & Machine Learning',
     temp: 'cool',
-    color: '#06b6d4', // cyan
+    color: '#a99bff', // lavender (--class-ai-ml)
     aliases: ['AI&ML', 'AI & ML', 'AI'],
   },
   {
     name: 'AP Calculus BC',
     temp: 'cool',
-    color: '#3b82f6', // blue
+    color: '#6fa8ff', // cornflower (--class-calc-bc)
     aliases: ['Calculus BC', 'AP Calc BC', 'AP Calc', 'Calc BC', 'Calc'],
   },
-  { name: '', temp: 'cool', color: '#6366f1', aliases: [] }, // indigo — reserved
+  { name: '', temp: 'cool', color: '#4fd1d9', aliases: [] }, // aqua (--class-reserved-3) — reserved
   {
     name: 'AP Statistics',
     temp: 'cool',
-    color: '#14b8a6', // teal
+    color: '#86d07a', // leaf (--class-stats)
     aliases: ['Statistics', 'AP Stats', 'Stats'],
   },
   {
     name: 'AP Government & Politics',
     temp: 'warm',
-    color: '#ef4444', // red
+    color: '#ff8270', // coral (--class-gov)
     aliases: ['Government & Politics', 'AP Gov', 'Gov'],
   },
   {
     name: 'Senior English',
     temp: 'warm',
-    color: '#f97316', // orange
+    color: '#ffa65a', // tangerine (--class-seng)
     aliases: ['Seng'],
   },
-  { name: 'Seminar', temp: 'warm', color: '#f59e0b', aliases: [] }, // amber
-  { name: 'SPEX', temp: 'warm', color: '#f59e0b', aliases: [] }, // amber — shared with Seminar
+  { name: 'Seminar', temp: 'warm', color: '#efc94c', aliases: [] }, // marigold (--class-seminar)
+  { name: 'SPEX', temp: 'warm', color: '#efc94c', aliases: [] }, // marigold — shared with Seminar (--class-spex)
   {
     name: 'AP Capstone Research',
     temp: 'warm',
-    color: '#ec4899', // pink
+    color: '#f383b8', // rose (--class-research)
     aliases: ['Capstone Research', 'AP Research', 'Research'],
   },
 ]
+
+// Neutral color for unlabelled, escaped and completed cards (--label-none).
+export const LABEL_NONE_COLOR = '#6a645a'
 
 // Ordered list of class names = priority order.
 export const CLASS_PRIORITY = CLASSES.map((c) => c.name)
