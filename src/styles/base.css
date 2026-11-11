@@ -11,6 +11,18 @@
     min-height: 100%;
   }
 
+  /* App shell (App.jsx): a full-height column. The offline banner takes its
+     natural height at the top and .app-main fills exactly what is left, so the
+     board never scrolls the page. .app-main only scrolls if a screen (sign in
+     on a short phone) is taller than the space.
+     Stacking, bottom to top: board (auto) < offline banner (10, never
+     overlaps the header: it sits above it in the flow) < sticky header (20,
+     its popovers + menus live in its stacking context) < install prompt (30)
+     < phone scrim + sheets (40/41, portalled to body) < drag overlay (50,
+     BoardPage) < toasts (60). */
+  .app { display: flex; flex-direction: column; height: 100dvh; }
+  .app-main { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow-y: auto; }
+
   /* The page: warm graphite dot-grid journal page */
   body {
     margin: 0;

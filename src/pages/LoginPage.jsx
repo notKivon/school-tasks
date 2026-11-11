@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../lib/auth.jsx'
 import { passkeysSupported, passkeyErrorMessage } from '../lib/supabase.js'
+import { authErrorInfo } from '../lib/authErrors.js'
 import Icon from '../components/Icon.jsx'
 import AuthMessage from '../components/AuthMessage.jsx'
 import AuthModeToggle from '../components/AuthModeToggle.jsx'
@@ -43,8 +44,9 @@ export default function LoginPage() {
         if (error) throw error
       }
     } catch (err) {
-      setError(err.message || 'Something went wrong')
-      setBadPassword(true)
+      const { message, password } = authErrorInfo(err)
+      setError(message)
+      setBadPassword(password)
     } finally {
       setLoading(false)
     }

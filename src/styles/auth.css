@@ -2,7 +2,7 @@
    "Sign in" + "Feedback"). Shared pieces (.btn, .field, .input, .brand-mark)
    live in components.css. */
 @layer components {
-  .login { display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; align-items: center; min-height: 100dvh; padding: 40px 20px; }
+  .login { display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; align-items: center; flex: 1 0 auto; padding: 40px 20px; }
   .auth { width: 380px; max-width: 100%; }
   .auth-brand { display: flex; align-items: center; gap: 12px; justify-content: center; margin-bottom: 26px; }
   .auth-brand .brand-mark { width: 16px; height: 26px; }
@@ -26,7 +26,7 @@
   .or::before, .or::after { content: ""; flex: 1; height: 1px; background: var(--line-1); }
 
   /* Quiet app-level loading */
-  .boot { display: grid; place-items: center; align-content: center; gap: 14px; min-height: 100dvh; color: var(--text-3); font-size: var(--text-sm); }
+  .boot { display: grid; place-items: center; align-content: center; gap: 14px; flex: 1 0 auto; color: var(--text-3); font-size: var(--text-sm); }
   .boot .brand-mark { width: 16px; height: 26px; animation: boot-pulse 1.6s var(--ease-in-out) infinite; }
 
   /* Toasts: bottom-right stack, kept inside the viewport on phones */
@@ -42,7 +42,7 @@
   .toast:hover .toast-x { color: var(--text-1); background: var(--accent-soft); }
   .toast-x .i { width: 12px; height: 12px; }
 
-  .offline { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; justify-content: center; gap: 9px; padding: 8px 16px; background: color-mix(in oklab, var(--warning) 13%, var(--surface-page)); border-bottom: 1px solid color-mix(in oklab, var(--warning) 30%, transparent); color: #f6d6a6; font-size: 14px; }
+  .offline { position: relative; z-index: 10; flex: none; display: flex; align-items: center; justify-content: center; gap: 9px; padding: 8px 16px; background: color-mix(in oklab, var(--warning) 13%, var(--surface-page)); border-bottom: 1px solid color-mix(in oklab, var(--warning) 30%, transparent); color: #f6d6a6; font-size: 14px; }
   .offline .i { color: var(--warning); width: 15px; height: 15px; }
 
   .install { position: fixed; z-index: 30; left: 16px; bottom: 16px; max-width: calc(100vw - 32px); display: flex; align-items: center; gap: 12px; padding: 10px 10px 10px 12px; background: var(--surface-overlay); border: 1px solid var(--line-2); border-radius: var(--radius-popover); box-shadow: var(--shadow-pop); }

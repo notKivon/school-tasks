@@ -9,6 +9,7 @@ import {
   EmptyColumn,
 } from './ColumnParts.jsx'
 import { formatDisplayDate } from '../lib/dates.js'
+import { useSettledEmpty } from '../hooks/useSettledEmpty.js'
 
 // One board column: display-font title, active-card count, its calculated due
 // date (auto-date columns only), the sorted card list scrolling inside the
@@ -63,8 +64,11 @@ export default function Column({
   // and completed groups keeps its DOM node — letting the collapse transition
   // play (the col-2 fade-out) instead of snapping.
   const ordered = [...active, ...completed]
-  const showEmpty =
-    !isTarget && active.length === 0 && (completed.length === 0 || !showCompleted)
+  const nothingVisible =
+    active.length === 0 && (completed.length === 0 || !showCompleted)
+  // Waits out the 700ms collapse when the last visible card collapses away.
+  const settledEmpty = useSettledEmpty(nothingVisible, ordered.length > 0)
+  const showEmpty = !isTarget && settledEmpty
 
   const classes = ['col', isCol2 && 'col--today', isTarget && 'col--over']
     .filter(Boolean)

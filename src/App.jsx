@@ -32,27 +32,33 @@ function RedirectIfAuth({ children }) {
 function App() {
   return (
     <BrowserRouter>
-      <OfflineBanner />
-      <InstallPrompt />
-      <Routes>
-        <Route
-          path="/login"
-          element={
-            <RedirectIfAuth>
-              <LoginPage />
-            </RedirectIfAuth>
-          }
-        />
-        <Route
-          path="/board"
-          element={
-            <RequireAuth>
-              <BoardPage />
-            </RequireAuth>
-          }
-        />
-        <Route path="*" element={<Navigate to="/board" replace />} />
-      </Routes>
+      {/* Full-height column: the offline banner takes its natural height at
+          the very top and the routed screen fills exactly what is left. */}
+      <div className="app">
+        <OfflineBanner />
+        <InstallPrompt />
+        <div className="app-main">
+          <Routes>
+            <Route
+              path="/login"
+              element={
+                <RedirectIfAuth>
+                  <LoginPage />
+                </RedirectIfAuth>
+              }
+            />
+            <Route
+              path="/board"
+              element={
+                <RequireAuth>
+                  <BoardPage />
+                </RequireAuth>
+              }
+            />
+            <Route path="*" element={<Navigate to="/board" replace />} />
+          </Routes>
+        </div>
+      </div>
     </BrowserRouter>
   )
 }

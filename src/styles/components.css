@@ -113,6 +113,7 @@
   .menu-item small { display: block; margin-top: 1px; color: var(--text-3); font-size: var(--text-sm); }
   .menu-item:hover, .menu-item.is-hover { background: var(--accent-soft); }
   .menu-item:hover .i, .menu-item.is-hover .i { color: var(--text-1); }
+  .menu-item:disabled { cursor: progress; }
 
   /* Phone bottom sheet (popovers on narrow screens) */
   .sheet-scrim { position: fixed; inset: 0; z-index: 40; background: var(--surface-scrim); }

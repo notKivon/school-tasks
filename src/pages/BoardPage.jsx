@@ -12,6 +12,7 @@ import { useColumnSnap } from '../hooks/useColumnSnap.js'
 // On phones the peeking next column sits inside dnd-kit's default edge zone,
 // so a gentler auto-scroll keeps a dragged card from overshooting it.
 const PHONE_AUTO_SCROLL = { acceleration: 3 }
+const DRAG_OVERLAY_Z = 50 // over phone sheets, under toasts (scale: base.css)
 
 // The 5-column board: five full-height columns under the header (horizontal
 // scroll when the window is narrower; one snapped column at a time with a tab
@@ -121,7 +122,7 @@ export default function BoardPage() {
             />
           ))}
         </div>
-        <DragOverlay>
+        <DragOverlay zIndex={DRAG_OVERLAY_Z}>
           {activeCard ? (
             <Card
               card={activeCard}
@@ -138,11 +139,11 @@ export default function BoardPage() {
   )
 }
 
-// Full-height page: the header, then the board area filling the rest of the
-// viewport (each column's list scrolls inside it, never the page).
+// The header, then the board filling what the app shell leaves under the
+// offline banner (each column's list scrolls inside it, never the page).
 function Shell({ children }) {
   return (
-    <div className="flex h-dvh flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       <Header />
       <main className="flex min-h-0 flex-1 flex-col">{children}</main>
     </div>
