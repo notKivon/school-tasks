@@ -31,6 +31,9 @@
 
   /* Toasts: bottom-right stack, kept inside the viewport on phones */
   .toasts { position: fixed; z-index: 60; right: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 8px; width: 340px; max-width: calc(100vw - 32px); pointer-events: none; }
+  @media (max-width: 479px) {
+    .toasts { left: 16px; width: auto; max-width: none; }
+  }
   .toast { pointer-events: auto; display: grid; grid-template-columns: 20px 1fr 22px; gap: 10px; align-items: start; padding: 11px 10px 11px 12px; background: var(--surface-overlay); border: 1px solid var(--line-2); border-radius: 12px; box-shadow: var(--shadow-pop); font-size: 14.5px; line-height: 1.45; cursor: pointer; overflow-wrap: anywhere; }
   .toast-ico { width: 20px; height: 20px; margin-top: 1px; border-radius: 50%; display: grid; place-items: center; }
   .toast-ico .i { width: 12px; height: 12px; stroke-width: 2.6; }
@@ -52,7 +55,9 @@
   .install small { display: block; color: var(--text-3); font-size: var(--text-sm); }
   .install-actions { display: flex; gap: 4px; margin-left: 6px; }
   @media (max-width: 560px) {
-    .install { flex-wrap: wrap; right: 16px; }
+    /* Phones: in the flow below .app-main (App.jsx) so it reserves its own height
+       and never covers the board's bottom controls. */
+    .install { position: static; flex: none; flex-wrap: wrap; max-width: none; margin: 0 16px 12px; }
     .install-actions { margin-left: 0; width: 100%; justify-content: flex-end; }
   }
 }

@@ -36,7 +36,6 @@ function App() {
           the very top and the routed screen fills exactly what is left. */}
       <div className="app">
         <OfflineBanner />
-        <InstallPrompt />
         <div className="app-main">
           <Routes>
             <Route
@@ -58,6 +57,7 @@ function App() {
             <Route path="*" element={<Navigate to="/board" replace />} />
           </Routes>
         </div>
+        <InstallPrompt />
       </div>
     </BrowserRouter>
   )

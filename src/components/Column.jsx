@@ -66,8 +66,14 @@ export default function Column({
   const ordered = [...active, ...completed]
   const nothingVisible =
     active.length === 0 && (completed.length === 0 || !showCompleted)
-  // Waits out the 700ms collapse when the last visible card collapses away.
-  const settledEmpty = useSettledEmpty(nothingVisible, ordered.length > 0)
+  // The 700ms collapse only applies when an active card has just turned
+  // completed (it is in `completed` now but was active on the previous render).
+  // Deletes, drags out and plain empty columns show the empty state at once.
+  const [prevActiveIds, setPrevActiveIds] = useState([])
+  const justCompleted = completed.some((c) => prevActiveIds.includes(c.id))
+  const activeKey = active.map((c) => c.id).join()
+  if (activeKey !== prevActiveIds.join()) setPrevActiveIds(active.map((c) => c.id))
+  const settledEmpty = useSettledEmpty(nothingVisible, justCompleted)
   const showEmpty = !isTarget && settledEmpty
 
   const classes = ['col', isCol2 && 'col--today', isTarget && 'col--over']
