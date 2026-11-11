@@ -1,0 +1,92 @@
+/* Header + its popovers (design/template.html "Header and popovers", "Phone").
+   Template class names, scoped to the header or to popover-only content so
+   they cannot collide with other screens. Shared pieces (.tool, .pop*, .menu*,
+   .sheet*, .url, .btn*, .chip, .brand-mark) come from components.css. */
+@layer components {
+  .topbar {
+    position: sticky; top: 0; z-index: 20;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    height: 60px; padding: 0 var(--space-5);
+    background: rgb(26 24 22 / 0.86);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line-1);
+  }
+  .topbar .brand { display: flex; align-items: baseline; gap: 14px; min-width: 0; }
+  .topbar .brand-name {
+    display: flex; align-items: center; gap: 9px; margin: 0;
+    font-family: var(--font-display); font-size: var(--text-lg); font-weight: 600;
+    letter-spacing: -0.005em; white-space: nowrap;
+  }
+  .topbar .brand-date { color: var(--text-3); font-size: 14px; white-space: nowrap; }
+  .topbar .tools { display: flex; align-items: center; gap: 4px; }
+
+  .avatar-btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    height: 34px; padding: 0 6px 0 3px; margin-left: 6px;
+    border-radius: var(--radius-pill); color: var(--text-3);
+    transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+  }
+  .avatar-btn:hover, .avatar-btn.is-open { background: var(--accent-soft); color: var(--text-2); }
+  .avatar-btn .i { width: 14px; height: 14px; }
+  .avatar {
+    width: 28px; height: 28px; flex: none; display: grid; place-items: center;
+    border-radius: 50%; border: 1px solid var(--line-2);
+    background: var(--surface-raised); color: var(--text-1);
+    font-weight: var(--weight-semibold); font-size: 14px; text-transform: uppercase;
+  }
+
+  /* Programmatic focus lands on the panel; keep its own shadow, no ring */
+  .hdr-panel { outline: none; }
+  .hdr-panel.pop:focus-visible, .hdr-panel.menu:focus-visible { box-shadow: var(--shadow-pop); }
+  .hdr-panel:not(.pop, .menu):focus-visible { box-shadow: none; }
+  .hdr-panel.pop, .hdr-panel.menu { max-width: calc(100vw - 16px); }
+
+  /* Account menu */
+  .menu-who { display: flex; gap: 10px; align-items: center; padding: 10px 10px 12px; min-width: 0; }
+  .menu-who .avatar { width: 34px; height: 34px; }
+  .menu-who small { display: block; color: var(--text-3); font-size: var(--text-sm); }
+  .menu-who strong {
+    display: block; font-weight: var(--weight-medium); font-size: 14.5px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .menu-item:disabled { cursor: progress; }
+
+  /* Classes popover */
+  .example {
+    margin-top: 12px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px;
+    padding: 10px; border-radius: var(--radius-card);
+    background: var(--surface-sunken); border: 1px solid var(--line-1);
+  }
+  .example .typed { font-size: 14px; color: var(--text-1); }
+  .example .typed em { font-style: normal; color: var(--c); }
+  .example .i { color: var(--text-3); width: 14px; height: 14px; }
+  .example .result { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; font-size: 14px; }
+  .example .chip { --surface-card: var(--surface-sunken); }
+  .class-list { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 2px; }
+  .class-list li { display: grid; grid-template-columns: 20px 1fr; gap: 8px; align-items: baseline; padding: 6px 0; }
+  .class-list .n { color: var(--text-3); font-size: var(--text-sm); font-variant-numeric: tabular-nums; text-align: right; }
+  .class-list .aka { margin-top: 4px; font-size: 13.5px; color: var(--text-2); line-height: 1.5; }
+  .class-list .aka span { color: var(--text-3); }
+  .swatch-bar { width: 3px; height: 30px; flex: none; margin-top: 2px; border-radius: 3px; background: var(--label-none); }
+
+  /* Calendar popover */
+  .url-row { display: flex; gap: 8px; margin-top: 14px; }
+  .steps { margin-top: 14px; display: grid; gap: 10px; }
+  .step { display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: start; }
+  .app-ico {
+    width: 28px; height: 28px; display: grid; place-items: center; border-radius: 7px;
+    background: var(--surface-raised); color: var(--text-2); font-weight: var(--weight-bold); font-size: 12px;
+  }
+  .app-ico .i { width: 14px; height: 14px; }
+  .step b { display: block; font-size: 14px; font-weight: var(--weight-semibold); }
+  .step p { color: var(--text-2); font-size: 13.5px; line-height: 1.5; }
+
+  /* Phone: icon tools, no date, no chevron (popovers become sheets in JS) */
+  @media (max-width: 639.98px) {
+    .topbar { height: 52px; padding: 0 10px 0 16px; }
+    .topbar .brand-date { display: none; }
+    .topbar .tools { gap: 0; }
+    .topbar .avatar-btn { padding-right: 3px; }
+    .topbar .avatar-btn .chev { display: none; }
+  }
+}

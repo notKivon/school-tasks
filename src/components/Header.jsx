@@ -1,149 +1,65 @@
-import { useEffect, useRef, useState } from 'react'
-import { useAuth } from '../lib/auth.jsx'
-import { useToast } from '../lib/toast.jsx'
-import { passkeysSupported, passkeyErrorMessage } from '../lib/supabase.js'
+import { useCallback, useEffect, useState } from 'react'
+import { getTodayHKT, msUntilNextHKTMidnight } from '../lib/dates.js'
 import ClassGuide from './ClassGuide.jsx'
+import CalendarPopover from './CalendarPopover.jsx'
+import AccountMenu from './AccountMenu.jsx'
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
+// "2026-11-11" -> "Wednesday 11 November". The date string is already the HKT
+// day, so it is formatted as a UTC date to avoid any local-zone shift.
+function formatLongDate(isoDate) {
+  const [y, m, d] = isoDate.split('-').map(Number)
+  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString('en-GB', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    timeZone: 'UTC',
+  })
+}
 
-// Sticky top bar: app name, Calendar subscribe popover, the signed-in email,
-// and Sign Out.
-export default function Header() {
-  const { user, signOut, registerPasskey } = useAuth()
-  const toast = useToast()
-  const [calOpen, setCalOpen] = useState(false)
-  const [copied, setCopied] = useState(false)
-  const [enrolling, setEnrolling] = useState(false)
-  const popoverRef = useRef(null)
-
-  const icsUrl = user
-    ? `${SUPABASE_URL}/functions/v1/ics-feed?uid=${user.id}`
-    : ''
-
-  // Close the popover on outside-click or Escape.
+// Today in HKT, refreshed at HKT midnight so the header never shows yesterday.
+function useTodayHKT() {
+  const [today, setToday] = useState(getTodayHKT)
   useEffect(() => {
-    if (!calOpen) return
-    const onClick = (e) => {
-      if (popoverRef.current && !popoverRef.current.contains(e.target)) {
-        setCalOpen(false)
-      }
-    }
-    const onKey = (e) => {
-      if (e.key === 'Escape') setCalOpen(false)
-    }
-    document.addEventListener('mousedown', onClick)
-    document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('mousedown', onClick)
-      document.removeEventListener('keydown', onKey)
-    }
-  }, [calOpen])
+    const id = setTimeout(() => setToday(getTodayHKT()), msUntilNextHKTMidnight() + 1000)
+    return () => clearTimeout(id)
+  }, [today])
+  return today
+}
 
-  const addPasskey = async () => {
-    setEnrolling(true)
-    try {
-      const { error } = await registerPasskey()
-      if (error) throw error
-      toast.success('Passkey added — use it to sign in next time')
-    } catch (err) {
-      toast.error(passkeyErrorMessage(err, 'Add passkey'))
-    } finally {
-      setEnrolling(false)
-    }
-  }
+// Sticky top bar: brand + today's date, then Classes and Calendar (one click
+// away) and the avatar's account menu. Only one popover is open at a time.
+export default function Header() {
+  const today = useTodayHKT()
+  const [openPop, setOpenPop] = useState(null) // 'classes' | 'calendar' | 'account' | null
 
-  const copyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(icsUrl)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-      toast.info('Calendar link copied')
-    } catch {
-      setCopied(false)
-      toast.error("Couldn't copy — select and copy the link manually")
-    }
-  }
+  const close = useCallback(() => setOpenPop(null), [])
+  const toggle = (key) => () => setOpenPop((cur) => (cur === key ? null : key))
 
   return (
-    <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-800 bg-slate-900/80 px-4 py-3 backdrop-blur">
-      <h1 className="text-sm font-semibold tracking-wide text-slate-100">
-        School Tasks
-      </h1>
-      <div className="flex items-center gap-3">
-        <span className="hidden text-sm text-slate-400 sm:inline">
-          {user?.email}
-        </span>
-
-        <ClassGuide />
-
-        <div className="relative" ref={popoverRef}>
-          <button
-            type="button"
-            onClick={() => setCalOpen((o) => !o)}
-            className="rounded-md border border-slate-700 px-3 py-1.5 text-sm text-slate-200 transition-colors hover:bg-slate-800"
-          >
-            Calendar
-          </button>
-
-          {calOpen && (
-            <div className="absolute right-0 z-20 mt-2 w-80 rounded-lg border border-slate-700 bg-slate-900 p-4 text-sm shadow-xl">
-              <p className="mb-2 font-medium text-slate-100">
-                Subscribe to your tasks
-              </p>
-              <p className="mb-3 text-xs text-slate-400">
-                A read-only calendar feed of every task with a due date. It
-                refreshes automatically in your calendar app.
-              </p>
-
-              <div className="mb-2 flex items-stretch gap-2">
-                <input
-                  type="text"
-                  readOnly
-                  value={icsUrl}
-                  onFocus={(e) => e.target.select()}
-                  className="min-w-0 flex-1 rounded-md border border-slate-700 bg-slate-800 px-2 py-1.5 text-xs text-slate-300"
-                />
-                <button
-                  type="button"
-                  onClick={copyLink}
-                  className="shrink-0 rounded-md bg-cyan-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-cyan-500"
-                >
-                  {copied ? 'Copied!' : 'Copy link'}
-                </button>
-              </div>
-
-              <div className="mt-3 space-y-1 text-xs text-slate-400">
-                <p>
-                  <span className="text-slate-300">Google Calendar:</span> Other
-                  calendars → From URL → paste the link.
-                </p>
-                <p>
-                  <span className="text-slate-300">Apple Calendar:</span> File →
-                  New Calendar Subscription → paste the link.
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {passkeysSupported && (
-          <button
-            type="button"
-            onClick={addPasskey}
-            disabled={enrolling}
-            className="rounded-md border border-slate-700 px-3 py-1.5 text-sm text-slate-200 transition-colors hover:bg-slate-800 disabled:opacity-60"
-          >
-            {enrolling ? 'Adding…' : 'Add passkey'}
-          </button>
-        )}
-
-        <button
-          type="button"
-          onClick={() => signOut()}
-          className="rounded-md border border-slate-700 px-3 py-1.5 text-sm text-slate-200 transition-colors hover:bg-slate-800"
-        >
-          Sign Out
-        </button>
+    <header className="topbar">
+      <div className="brand">
+        <h1 className="brand-name">
+          <span className="brand-mark" aria-hidden="true" />
+          School Tasks
+        </h1>
+        <span className="brand-date">{formatLongDate(today)}</span>
+      </div>
+      <div className="tools">
+        <ClassGuide
+          open={openPop === 'classes'}
+          onToggle={toggle('classes')}
+          onClose={close}
+        />
+        <CalendarPopover
+          open={openPop === 'calendar'}
+          onToggle={toggle('calendar')}
+          onClose={close}
+        />
+        <AccountMenu
+          open={openPop === 'account'}
+          onToggle={toggle('account')}
+          onClose={close}
+        />
       </div>
     </header>
   )
